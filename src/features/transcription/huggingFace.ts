@@ -45,9 +45,6 @@ export async function transcribe(audioUri: string): Promise<Transcript> {
     const payload: AsrResult | AsrResult[] = await response.json();
     return { words: toWords(Array.isArray(payload) ? payload[0] : payload) };
   } catch (error) {
-    // Keep this log for one round only: it tells us the real failure status
-    // (token, network, 401, 404...) instead of the generic fallback.
-    console.warn('transcription failed:', error instanceof Error ? error.message : error);
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('transcription timed out');
     }
