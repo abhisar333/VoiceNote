@@ -56,8 +56,10 @@ export default function App() {
     } catch {
       // Delay ~700 ms so the 1-2-3 dots animation renders once before the message appears.
       await new Promise((resolve) => setTimeout(resolve, 700));
+      const reason =
+        error instanceof Error ? error.message : 'transcription unavailable';
       setNote((current) =>
-        setVoiceTranscript(current, segmentId, 'transcription unavailable', null),
+        setVoiceTranscript(current, segmentId, reason, null),
       );
     }
   };
