@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoiceNote — Scope</title>
+<style>
+:root{--bg:#f7f8fb;--card:#fff;--ink:#1a1d24;--muted:#5b6472;--accent:#4f46e5;--soft:#eef0ff;--line:#e4e7ee;--green:#0b7a4b;--green-soft:#eafaf1}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:40px 20px 64px}
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+h1{font-size:34px;margin:0;letter-spacing:-.02em}
+.badge{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7a4d00;background:#fff3d6;border:1px solid #f0dca8;padding:4px 10px;border-radius:999px}
+.sub{color:var(--muted);margin:0 0 28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin:0 0 20px}
+.kernel{border-left:5px solid var(--accent);background:linear-gradient(180deg,#fff,#fbfbff)}
+h2{font-size:20px;margin:0 0 10px;letter-spacing:-.01em}
+.kernel h2,.card h2{margin-top:0}
+p{margin:0 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.quote{margin:0 0 12px;padding:14px 18px;background:var(--soft);border-left:4px solid var(--accent);border-radius:10px;font-style:italic;color:#33356b}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:14px;font-weight:600;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.panel{display:none}.panel.active{display:block;animation:f .25s ease}
+@keyframes f{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+ul{margin:0;padding-left:20px}li{margin:6px 0}
+code{background:#f1f2f7;padding:1px 6px;border-radius:6px;font-size:14px}
+.risk{border-left:5px solid #e0a800;background:#fffdf5}
+footer{color:var(--muted);font-size:13px;text-align:center;margin-top:24px}
+svg{width:100%;height:auto;display:block}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="top"><h1>VoiceNote</h1><span class="badge" style="color:#0b7a4b;background:#eafaf1;border-color:#bfe8d2">Scope · approved</span></header>
+<p class="sub">Proof-of-concept scope — capture by talking, retrieve by reading.</p>
+
+<section class="card kernel">
+<h2>The unique kernel</h2>
+<p>A note is an <strong>ordered list of segments, and a segment can be a recording</strong>. The recording stays attached to its position and replays in place, later, forever — with text as the skimmable companion rather than a replacement for it.</p>
+<p>Delete that and VoiceNote is just another dictation app.</p>
+</section>
+
+<section class="card">
+<h2>How it fits together</h2>
+<svg viewBox="0 0 900 300" role="img" aria-label="A mid-thought user captures by talking; speech-to-text fills in automatically; they retrieve by reading; the original replays in place. A proof band shows it survives an app restart.">
+  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8b90a0"/></marker></defs>
+  <rect x="20" y="14" width="860" height="50" rx="12" fill="#eef0ff" stroke="#c7cbf7"/>
+  <text x="450" y="45" text-anchor="middle" font-size="15" font-weight="600" fill="#3b3f8f">The user — you, mid-thought. An idea lands; you won't stop what you're doing to type it.</text>
+  <g>
+    <rect x="18" y="100" width="200" height="116" rx="12" fill="#fff" stroke="#e4e7ee"/>
+    <text x="118" y="128" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1d24">1 · Capture</text>
+    <text x="118" y="156" text-anchor="middle" font-size="13" fill="#5b6472">Hold the mic, talk,</text>
+    <text x="118" y="176" text-anchor="middle" font-size="13" fill="#5b6472">close the app.</text>
+
+    <rect x="242" y="100" width="200" height="116" rx="12" fill="#fff" stroke="#e4e7ee"/>
+    <text x="342" y="128" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1d24">2 · Auto text</text>
+    <text x="342" y="156" text-anchor="middle" font-size="13" fill="#5b6472">Speech-to-text fills</text>
+    <text x="342" y="176" text-anchor="middle" font-size="13" fill="#5b6472">in. No typing.</text>
+
+    <rect x="466" y="100" width="200" height="116" rx="12" fill="#fff" stroke="#e4e7ee"/>
+    <text x="566" y="128" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1d24">3 · Retrieve</text>
+    <text x="566" y="156" text-anchor="middle" font-size="13" fill="#5b6472">Read the note to</text>
+    <text x="566" y="176" text-anchor="middle" font-size="13" fill="#5b6472">spot the piece.</text>
+
+    <rect x="690" y="100" width="200" height="116" rx="12" fill="#fff" stroke="#e4e7ee"/>
+    <text x="790" y="128" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1d24">4 · Replay</text>
+    <text x="790" y="156" text-anchor="middle" font-size="13" fill="#5b6472">Long-press — the</text>
+    <text x="790" y="176" text-anchor="middle" font-size="13" fill="#5b6472">original plays</text>
+    <text x="790" y="196" text-anchor="middle" font-size="13" fill="#5b6472">in place.</text>
+  </g>
+  <line x1="219" y1="158" x2="239" y2="158" stroke="#8b90a0" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="443" y1="158" x2="463" y2="158" stroke="#8b90a0" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="667" y1="158" x2="687" y2="158" stroke="#8b90a0" stroke-width="2" marker-end="url(#ar)"/>
+  <rect x="18" y="240" width="872" height="46" rx="12" fill="#eafaf1" stroke="#bfe8d2"/>
+  <text x="454" y="268" text-anchor="middle" font-size="14" font-weight="600" fill="#0b7a4b">Proof — force-quit &amp; reopen: the note, its text, its order, and its audio all survive.</text>
+</svg>
+</section>
+
+<div class="grid">
+  <section class="card">
+    <h2>Who it's for</h2>
+    <p><strong>You</strong> — someone who gets an idea or remembers a task <em>mid-flow</em>, and won't stop what you're doing to type it out.</p>
+    <p>Today, two bad options: <strong>type it</strong> (slow, and it interrupts the thought) or <strong>voice-record it</strong> (fast in, painful out — sift through rambling every time, or hand-transcribe).</p>
+    <p>You don't sign, so sign language isn't the user's need.</p>
+  </section>
+  <section class="card">
+    <h2>Why it matters</h2>
+    <blockquote class="quote">"I was thinking about something else and I got the app idea. If I want to note it in a normal notes app I'd have to type it — that takes time and it interrupts my thought about what I was doing. If I use voice record I'd have to sift through long rambling to get different portions of the idea every time I need to review it, or type out a transcript."</blockquote>
+    <p>Two frictions: <strong>capture without interrupting the thought</strong>, and <strong>retrieve without re-listening</strong>. Typing fails the first; a raw voice memo fails the second.</p>
+  </section>
+</div>
+
+<section class="card">
+  <h2>What "working" looks like</h2>
+  <p>On a real <strong>Android</strong> phone: open the app, hold the mic, talk — and the <strong>transcript appears as a segment on its own</strong>. Later, the note reads as text; tapping a segment's words edits them, long-press <strong>replays the original audio in place</strong>. Force-quit and reopen — the note, its text, its order, and its audio all survive.</p>
+  <p>Demonstrable in well under a minute, which is what the demo video needs.</p>
+</section>
+
+<section class="card">
+  <h2>In · Later · Cut</h2>
+  <div class="tabs" role="tablist">
+    <button id="t-now" role="tab" aria-selected="true" aria-controls="p-now">In the POC</button>
+    <button id="t-later" role="tab" aria-selected="false" aria-controls="p-later">Later</button>
+    <button id="t-cut" role="tab" aria-selected="false" aria-controls="p-cut">Cut</button>
+  </div>
+  <div class="panel active" id="p-now" role="tabpanel" aria-labelledby="t-now">
+    <ul>
+      <li>One note; segments in order; typed segments.</li>
+      <li>Voice segments that record, <strong>auto-transcribe to text</strong>, keep the audio file, and replay in place.</li>
+      <li>Per-segment text you can edit, skip, or add after the fact.</li>
+      <li>Everything surviving an app restart.</li>
+      <li>The <strong>custom dev client</strong> auto-transcription requires — on Android this can be a <em>local</em> build (<code>npx expo run:android</code>), no EAS cloud queue.</li>
+      <li><strong>Android only</strong> — built, run, and verified on Android. DESIGN.md said "iOS &amp; Android"; the POC narrows to Android.</li>
+    </ul>
+  </div>
+  <div class="panel" id="p-later" role="tabpanel" aria-labelledby="t-later">
+    <ul>
+      <li><strong>iOS support</strong> — DESIGN.md targeted "iOS &amp; Android", but the POC is Android-only, so iOS moves here: unbuilt and untested, <em>not</em> assumed working. Reinstating it is mostly a build concern.</li>
+      <li><strong>Sign segments</strong> (video record + in-place playback) — the same mechanism with a different recorder. Out of the POC because you don't sign, and it drags in <code>expo-camera</code>, a second recorder screen, camera permissions, and preview/retake.</li>
+      <li>Segment deletion, search, waveform/duration indicators, versioned migrations, cloud sync.</li>
+    </ul>
+  </div>
+  <div class="panel" id="p-cut" role="tabpanel" aria-labelledby="t-cut">
+    <ul>
+      <li><strong>Automatic sign-language-to-text</strong> — no reliable model exists; the recording is kept, only auto-transcription is deferred.</li>
+      <li>Sync / cloud / accounts / collaboration; rich text, folders, tags, sharing/export.</li>
+      <li>Testing breadth and CI — a proof of concept, not a release.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="card risk">
+  <h2>Risks to prove</h2>
+  <ul>
+    <li><strong>Concurrent microphone access</strong> — <code>expo-av</code> recording and <code>expo-speech-recognition</code> listening at once on the same mic. Unverifiable in Jest; must be checked on a real device — now an <strong>Android-only</strong> verification. Fallback: record first, transcribe from the finished file.</li>
+    <li><strong>Build cost</strong> — the dev client is still the heaviest item in a 2–4 hour POC, but Android-only softens it: <code>npx expo run:android</code> builds locally, no cloud build or EAS account. Rebuild only when native config changes; JS changes just need <code>npx expo start</code>.</li>
+  </ul>
+</section>
+
+<footer>Canonical version: <code>devpost/scope.md</code> · this page is a companion.</footer>
+</main>
+
+<script>
+(function(){
+  var ids=[["t-now","p-now"],["t-later","p-later"],["t-cut","p-cut"]];
+  ids.forEach(function(pair){
+    document.getElementById(pair[0]).addEventListener("click",function(){
+      ids.forEach(function(q){
+        var on=q[0]===pair[0];
+        document.getElementById(q[0]).setAttribute("aria-selected",on?"true":"false");
+        document.getElementById(q[1]).classList.toggle("active",on);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

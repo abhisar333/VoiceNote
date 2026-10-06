@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceNote — Spec (Visual Review)</title>
+<style>
+  :root { --bg:#000; --card:#111; --card2:rgba(160,160,160,.12);
+          --text:#e8e8e8; --dim:#9a9a9a; --red:#e33; --border:#262626;
+          --blue:#4af; --green:#6c6; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:16px/1.6 system-ui,"Segoe UI",sans-serif; }
+  .wrap { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+  h1 { font-size:1.9rem; } h1 small { display:block; font-size:.85rem;
+       color:var(--dim); font-weight:400; }
+  h2 { font-size:1.25rem; margin:40px 0 14px; color:#fff; }
+  h3 { font-size:1rem; }
+  .badge { display:inline-block; background:var(--card); border:1px solid var(--border);
+           border-radius:999px; padding:2px 12px; font-size:.8rem; color:var(--dim);
+           text-transform:uppercase; letter-spacing:.08em; margin-bottom:16px; }
+  .badge b { color:#7f7; font-weight:600; }
+  .plain { background:var(--card2); border:1px solid var(--border); border-radius:14px;
+           padding:16px 20px; color:#cfcfcf; }
+  .plain b { color:#fff; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px){ .grid2 { grid-template-columns:1fr; } }
+  table { border-collapse:collapse; width:100%; font-size:.93rem; }
+  th,td { border:1px solid var(--border); padding:9px 12px; text-align:left; vertical-align:top; }
+  th { background:var(--card); }
+  .dim { color:var(--dim); }
+  .svgcard { background:var(--card); border:1px solid var(--border);
+             border-radius:14px; padding:16px; overflow-x:auto; }
+  details { background:var(--card); border:1px solid var(--border);
+            border-radius:14px; margin:10px 0; overflow:hidden; }
+  summary { cursor:pointer; padding:14px 18px; font-weight:600; }
+  .body { padding:4px 18px 16px; color:#cfcfcf; }
+  .body ul { margin:8px 0; padding-left:20px; }
+  .body li { margin:6px 0; }
+  .code { background:#0b0b0b; border:1px solid var(--border); border-radius:12px;
+          padding:14px 16px; font:13px/1.5 ui-monospace,Consolas,monospace;
+          white-space:pre; overflow-x:auto; color:#cfcfcf; }
+  .code .c { color:#6a6a6a; } .code .k { color:var(--blue); } .code .g { color:var(--green); }
+  .risk { color:#e6c26b; }
+  .prd { color:var(--green); font-size:.85em; }
+  .step { display:flex; gap:14px; align-items:flex-start; margin:8px 0; }
+  .stepnum { flex:0 0 30px; height:30px; border-radius:50%; background:#1a0a0a;
+             border:1px solid #542; display:flex; align-items:center;
+             justify-content:center; font-size:.85rem; font-weight:700; color:#f88; }
+  .step p { margin:2px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge">4-spec · <b>status: approved</b> · markdown is canonical (devpost/spec.md)</div>
+  <h1>VoiceNote — Technical Spec
+    <small>Visual companion to the blueprint: architecture, the voice round-trip, and every component traced to the PRD it implements.</small>
+  </h1>
+
+  <div class="plain">The whole machine: <b>one screen</b>, <b>one note.json on the phone</b>, and <b>one round-trip to a free Whisper model on Hugging Face</b> that returns your words with the time each was spoken — which is what makes word-precise replay possible. Everything else is local.</div>
+
+  <h2>How It Runs</h2>
+  <div class="grid2">
+    <div class="plain"><h3>Primary: Expo Go (zero build)</h3>
+      <p><code>npm install</code> → <code>npx expo start</code> → scan QR with Expo Go. Mic permission prompt on first record. Internet only for transcription.</p></div>
+    <div class="plain"><h3>Fallback: local build</h3>
+      <p>If Expo Go blocks anything: <code>npx expo run:android</code> — compiles locally with the Android SDK, no EAS account, no cloud queue. (Approved in scope.)</p></div>
+  </div>
+
+  <h2>Architecture</h2>
+  <div class="svgcard">
+  <svg viewBox="0 0 860 400" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="13" role="img" aria-label="Architecture: screen, components, features, storage, cloud">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#777"/></marker></defs>
+    <rect x="20" y="20" width="820" height="88" rx="14" fill="#0d0d0d" stroke="#262626"/>
+    <text x="36" y="44" fill="#9a9a9a">UI — one screen</text>
+    <rect x="40" y="56" width="150" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="115" y="81" fill="#e8e8e8" text-anchor="middle">NoteScreen</text>
+    <rect x="210" y="56" width="150" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="285" y="81" fill="#e8e8e8" text-anchor="middle">SegmentBubble</text>
+    <rect x="380" y="56" width="130" height="40" rx="10" fill="#1a0a0a" stroke="#542"/>
+    <text x="445" y="81" fill="#e8e8e8" text-anchor="middle">RecordButton</text>
+    <rect x="530" y="56" width="130" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="595" y="81" fill="#e8e8e8" text-anchor="middle">ProgressRing</text>
+    <rect x="680" y="56" width="140" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="750" y="81" fill="#e8e8e8" text-anchor="middle">ModeToggle</text>
+    <rect x="330" y="140" width="200" height="52" rx="12" fill="#0d0d0d" stroke="#262626"/>
+    <text x="430" y="163" fill="#e8e8e8" text-anchor="middle">App.tsx</text>
+    <text x="430" y="181" fill="#9a9a9a" text-anchor="middle">state: mode · playback · note</text>
+    <line x1="430" y1="108" x2="430" y2="136" stroke="#777" marker-end="url(#a)"/>
+    <rect x="20" y="230" width="820" height="88" rx="14" fill="#0d0d0d" stroke="#262626"/>
+    <text x="36" y="254" fill="#9a9a9a">Features (src/features)</text>
+    <rect x="40" y="266" width="120" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="100" y="291" fill="#e8e8e8" text-anchor="middle">recorder</text>
+    <rect x="180" y="266" width="110" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="235" y="291" fill="#e8e8e8" text-anchor="middle">player</text>
+    <rect x="310" y="266" width="130" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="375" y="291" fill="#e8e8e8" text-anchor="middle">noteStore</text>
+    <rect x="460" y="266" width="120" height="40" rx="10" fill="#151515" stroke="#333"/>
+    <text x="520" y="291" fill="#e8e8e8" text-anchor="middle">segments</text>
+    <rect x="600" y="266" width="220" height="40" rx="10" fill="#0d1a0d" stroke="#363"/>
+    <text x="710" y="291" fill="#e8e8e8" text-anchor="middle">transcription/transcri.ts</text>
+    <line x1="430" y1="192" x2="430" y2="226" stroke="#777" marker-end="url(#a)"/>
+    <rect x="20" y="350" width="380" height="40" rx="12" fill="#0d0d0d" stroke="#262626"/>
+    <text x="210" y="375" fill="#e8e8e8" text-anchor="middle">device: note.json + recordings/*.m4a</text>
+    <line x1="200" y1="318" x2="200" y2="346" stroke="#777" marker-end="url(#a)"/>
+    <rect x="460" y="350" width="380" height="40" rx="12" fill="#0d1a0d" stroke="#363"/>
+    <text x="650" y="375" fill="#e8e8e8" text-anchor="middle">Hugging Face Whisper → text + word timestamps</text>
+    <line x1="710" y1="318" x2="710" y2="346" stroke="#777" marker-end="url(#a)"/>
+  </svg>
+  </div>
+  <h2>The Voice Round-Trip</h2>
+  <div class="plain">
+    <div class="step"><div class="stepnum">1</div><p><b>Tap</b> the red button → <span class="prd">recorder.start()</span> captures the mic; the button pulses while it hears sound. <span class="prd">prd.md › Capture</span></p></div>
+    <div class="step"><div class="stepnum">2</div><p><b>Tap again</b> → recording stops; the file is moved to <code>documents/recordings/</code> permanently.</p></div>
+    <div class="step"><div class="stepnum">3</div><p>A <b>voice segment</b> (<code>words: null</code>) joins the note → bubble shows the <b>1-2-3 dots</b> → <span class="prd">note.json saved</span>.</p></div>
+    <div class="step"><div class="stepnum">4</div><p><span class="prd">transcri.ts</span> uploads the file to <b>Hugging Face Whisper</b> → back comes the text <b>with a timestamp per word</b>.</p></div>
+    <div class="step"><div class="stepnum">5</div><p>Text fills the bubble; <code>words</code> stored. <b>Silent take → empty result → no segment + "no audio recorded".</b> <span class="prd">prd.md › Transcription</span></p></div>
+    <div class="step"><div class="stepnum">6</div><p><b>View mode:</b> long-press a word → vibrate → <span class="prd">player seeks to word.startMs</span> → ring animates top-left → release stops. <span class="prd">prd.md › Replay in place</span></p></div>
+    <div class="step"><div class="stepnum">7</div><p><b>Edit mode:</b> tap a bubble's text to fix it, tap empty space to type a new segment → save. <span class="prd">prd.md › Modes</span></p></div>
+    <div class="step"><div class="stepnum">8</div><p><b>Force-quit &amp; reopen</b> → <span class="prd">noteStore.loadNote()</span> restores segments, text, order, audio. <span class="prd">prd.md › States &amp; Edge Cases</span></p></div>
+  </div>
+
+  <h2>Components → PRD Behaviors</h2>
+  <details><summary>SegmentBubble · ProgressRing · RecordButton · ModeToggle</summary>
+    <div class="body"><ul>
+      <li><b>SegmentBubble</b> — typed text vs grey translucent voice bubble; the 1-2-3 dots while <code>words: null</code>; per-word spans for long-press; inline text editing; "transcription unavailable" state (audio kept, replay works). <span class="prd">prd.md › Replay in place, Modes, States &amp; Edge Cases</span></li>
+      <li><b>ProgressRing</b> — circular ring, top-left, 0→100% from ~10 Hz position ticks during playback. <span class="prd">prd.md › Replay in place</span></li>
+      <li><b>RecordButton</b> — round red, bottom right, tap start / tap stop; pulses on live mic level, fallback: continuous pulse while recording. <span class="prd">prd.md › Capture</span></li>
+      <li><b>ModeToggle</b> — fixed top-right; edit is default on open (empty note shows its cursor). <span class="prd">prd.md › Modes</span></li>
+    </ul></div>
+  </details>
+  <details><summary>recorder · player · noteStore · transcri (+ segments pure logic)</summary>
+    <div class="body"><ul>
+      <li><b>recorder</b> — expo-audio start/stop, temp file → permanent storage (DESIGN.md 3.3 kept), exposes mic level.</li>
+      <li><b>player</b> — load, <code>seekTo(word.startMs)</code>, vibrate once, stop on release or end, position ticks. <span class="risk">Top build risk: word-timestamp ↔ audio-clock alignment — spike this first.</span></li>
+      <li><b>noteStore</b> — load/save <code>documents/note.json</code>; empty result ⇒ no segment; errors ⇒ the approved "unavailable" bubble.</li>
+      <li><b>transcri/transcri.ts</b> — the swappable facade; <code>huggingFace.ts</code> is the only implementation (free token in <code>.env</code>, word timestamps requested); a Google swap later touches this folder only.</li>
+      <li><b>segments.ts</b> — pure types + helpers (create/insert/edit-text/word→time); the only Jest-tested file.</li>
+    </ul></div>
+  </details>
+  <h2>Data Model</h2>
+  <div class="code"><span class="c">// src/features/segments.ts — the whole persistent shape</span>
+<span class="k">type</span> Word    = { text: string; startMs: number; endMs: number };
+
+<span class="k">type</span> Segment =
+  | { id; kind: <span class="g">"typed"</span>; text: string }
+  | { id; kind: <span class="g">"voice"</span>; text: string;
+      audioUri: string;          <span class="c">// documents/recordings/&lt;id&gt;.m4a</span>
+      durationMs: number;
+      words: Word[] | null };    <span class="c">// null = transcribing or failed</span>
+
+<span class="k">type</span> Note = { segments: Segment[]; updatedAt: number };  <span class="c">// = note.json</span></div>
+  <p class="dim">No tables — one JSON document (learner decision). DESIGN.md's SQLite schema is the upgrade path, not this POC. Audio files live beside note.json; only paths are stored (DESIGN.md 3.3, kept).</p>
+
+  <h2>File Structure (annotated)</h2>
+  <div class="code">Noteapp/
+├── App.tsx                 <span class="c"># loads note, owns mode + playback state, saves on change</span>
+├── app.json                <span class="c"># Expo config: name, Android package, mic permission</span>
+├── package.json            <span class="c"># npm is the package manager</span>
+├── tsconfig.json / babel.config.js
+├── .env.example            <span class="c"># EXPO_PUBLIC_HF_TOKEN=hf_...  (real .env gitignored)</span>
+├── assets/                 <span class="c"># icon/splash (Expo defaults fine)</span>
+├── src/
+│   ├── screens/NoteScreen.tsx        <span class="c"># ring · toggle · segments · record button</span>
+│   ├── components/
+│   │   ├── SegmentBubble.tsx         <span class="c"># text / voice bubble / dots / edit / long-press</span>
+│   │   ├── RecordButton.tsx          <span class="c"># red round, tap start-stop, pulse</span>
+│   │   ├── ProgressRing.tsx          <span class="c"># top-left playback ring</span>
+│   │   └── ModeToggle.tsx            <span class="c"># top-right view/edit</span>
+│   └── features/
+│       ├── segments.ts               <span class="c"># pure logic — the only Jest-tested file</span>
+│       ├── recorder.ts               <span class="c"># start/stop, permanent file, mic level</span>
+│       ├── player.ts                 <span class="c"># seekTo(word), vibrate, release-stop, ticks</span>
+│       ├── noteStore.ts              <span class="c"># load/save note.json</span>
+│       └── transcription/
+│           ├── transcri.ts           <span class="c"># swappable facade (Google later = this folder)</span>
+│           ├── huggingFace.ts        <span class="c"># upload + word-timestamp mapping</span>
+│           └── types.ts
+├── __tests__/                        <span class="c"># segments.ts tests (optional in the POC)</span>
+├── devpost/                          <span class="c"># planning docs</span>
+└── DESIGN.md                         <span class="c"># vision doc; superseded sections noted in spec</span>
+
+<span class="c"># on device:</span>
+documents/
+├── note.json                <span class="c"># the Note document</span>
+└── recordings/&lt;segmentId&gt;.m4a</div>
+  <p class="dim">Deps: <code>expo</code>, <code>expo-audio</code>, <code>expo-file-system</code> (+ TS dev deps) — managed by <code>npx expo install</code>. No navigation, no database, no state library.</p>
+
+  <h2>Risks &amp; Early Verifications</h2>
+  <table>
+    <tr><th>#</th><th>Risk</th><th>Cover</th></tr>
+    <tr><td>1</td><td class="risk">Word-precise start: whisper timestamps vs. audio-clock seek accuracy</td><td>Spike playback on device before UI polish — it's the PRD's hardest promise</td></tr>
+    <tr><td>2</td><td>Free HF endpoint: cold starts (~15–30 s first call), rate limits</td><td>Bounded timeouts; the 1-2-3 dots are the cover; transcri.ts keeps Google a one-folder swap</td></tr>
+    <tr><td>3</td><td>Mic metering may be unavailable for the pulse</td><td>Fallback: continuous pulse while recording; silent-take notice driven by empty transcription</td></tr>
+    <tr><td>4</td><td>Expo Go compatibility</td><td>Chosen stack uses only Expo-bundled modules; fallback <code>npx expo run:android</code> (scope-approved)</td></tr>
+    <tr><td>5</td><td>DESIGN.md drift (§2.2 expo-av / speech-recognition, §3.1 SQLite, §5 multi-screen)</td><td>This spec supersedes those for the POC; DESIGN.md stays the vision doc for Later</td></tr>
+  </table>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceNote — PRD (Visual Review)</title>
+<style>
+  :root { --bg:#000; --card:#111; --card2:rgba(160,160,160,.12);
+          --text:#e8e8e8; --dim:#9a9a9a; --red:#e33; --border:#262626; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:16px/1.6 system-ui,"Segoe UI",sans-serif; }
+  .wrap { max-width:880px; margin:0 auto; padding:32px 20px 80px; }
+  h1 { font-size:1.9rem; }
+  h1 small { display:block; font-size:.85rem; color:var(--dim); font-weight:400; }
+  h2 { font-size:1.25rem; margin:40px 0 14px; color:#fff; }
+  .oneline { background:var(--card2); border:1px solid var(--border);
+             border-radius:14px; padding:14px 18px; color:#cfcfcf; }
+  .badge { display:inline-block; background:var(--card); border:1px solid var(--border);
+           border-radius:999px; padding:2px 12px; font-size:.8rem; color:var(--dim);
+           text-transform:uppercase; letter-spacing:.08em; margin-bottom:16px; }
+  .badge b { color:#7f7; font-weight:600; }
+  details { background:var(--card); border:1px solid var(--border);
+            border-radius:14px; margin:10px 0; overflow:hidden; }
+  summary { cursor:pointer; padding:14px 18px; font-weight:600; list-style:none; }
+  .body { padding:4px 18px 16px; color:#cfcfcf; }
+  .body ul { margin:8px 0; padding-left:20px; }
+  .body li { margin:6px 0; }
+  .dim { color:var(--dim); }
+  .assumption { border-left:3px solid #c90; padding-left:10px; color:#e6c26b; }
+  .svgcard { background:var(--card); border:1px solid var(--border);
+             border-radius:14px; padding:16px; overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:.93rem; }
+  th,td { border:1px solid var(--border); padding:9px 12px; text-align:left; vertical-align:top; }
+  th { background:var(--card); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px) { .grid2 { grid-template-columns:1fr; } }
+  .swatch { border-radius:14px; border:1px solid var(--border); padding:16px; min-height:120px; }
+  .swatch h3 { margin:0 0 10px; font-size:1rem; }
+  .bubble { background:rgba(140,140,140,.18); border-radius:18px; padding:12px 16px;
+            color:#d8d8d8; max-width:320px; }
+  .rec { width:64px; height:64px; border-radius:50%; background:var(--red);
+         box-shadow:0 0 0 0 rgba(227,51,51,.5); margin:10px auto; }
+  @keyframes pulse { to { box-shadow:0 0 0 14px rgba(227,51,51,0); } }
+  .rec.live { animation:pulse 1s infinite; }
+  .dots span { display:inline-block; width:7px; height:7px; border-radius:50%;
+               background:#999; margin-right:5px; animation:dotp 1.2s infinite; }
+  .dots span:nth-child(2) { animation-delay:.2s; }
+  .dots span:nth-child(3) { animation-delay:.4s; }
+  @keyframes dotp { 0%,60%,100% { opacity:.25; } 30% { opacity:1; } }
+  .later li::marker { content:"◦ "; color:var(--dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge">3-prd · <b>status: approved</b> · markdown is canonical (devpost/prd.md)</div>
+  <h1>VoiceNote — PRD
+    <small>Visual review companion. Scope said "a note with replayable voice segments" — now it's a screen, a journey, and checkable behavior.</small>
+  </h1>
+  <div class="oneline">A single-note screen where talking becomes a grey, replayable bubble of text — read to find your piece, long-press any word to hear that exact spot, and flip to edit mode to fix or extend the note.</div>
+  <h2>Core Journey</h2>
+  <div class="svgcard">
+  <svg viewBox="0 0 840 250" width="100%" role="img" aria-label="Journey diagram from open app to restart survival" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="14">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#777"/>
+      </marker>
+    </defs>
+    <g>
+      <rect x="10"  y="40" width="150" height="64" rx="14" fill="#111" stroke="#262626"/>
+      <text x="85"  y="68" fill="#e8e8e8" text-anchor="middle">Open app</text>
+      <text x="85"  y="88" fill="#9a9a9a" text-anchor="middle">empty note, cursor</text>
+      <rect x="190" y="40" width="150" height="64" rx="14" fill="#1a0a0a" stroke="#542"/>
+      <text x="265" y="68" fill="#e8e8e8" text-anchor="middle">Tap red mic</text>
+      <text x="265" y="88" fill="#9a9a9a" text-anchor="middle">pulses while you speak</text>
+      <rect x="370" y="40" width="150" height="64" rx="14" fill="#111" stroke="#262626"/>
+      <text x="445" y="68" fill="#e8e8e8" text-anchor="middle">Tap to stop</text>
+      <text x="445" y="88" fill="#9a9a9a" text-anchor="middle">grey bubble, 1-2-3 dot</text>
+      <rect x="550" y="40" width="150" height="64" rx="14" fill="#111" stroke="#262626"/>
+      <text x="625" y="68" fill="#e8e8e8" text-anchor="middle">Text lands</text>
+      <text x="625" y="88" fill="#9a9a9a" text-anchor="middle">bubble fills with transcript</text>
+      <rect x="710" y="40" width="120" height="64" rx="14" fill="#111" stroke="#262626"/>
+      <text x="770" y="68" fill="#e8e8e8" text-anchor="middle">View mode</text>
+      <text x="770" y="88" fill="#9a9a9a" text-anchor="middle">note reads as text</text>
+    </g>
+    <line x1="160" y1="72" x2="186" y2="72" stroke="#777" marker-end="url(#ar)"/>
+    <line x1="340" y1="72" x2="366" y2="72" stroke="#777" marker-end="url(#ar)"/>
+    <line x1="520" y1="72" x2="546" y2="72" stroke="#777" marker-end="url(#ar)"/>
+    <line x1="700" y1="72" x2="706" y2="72" stroke="#777" marker-end="url(#ar)"/>
+    <path d="M 770 104 C 770 150, 460 118, 458 158" fill="none" stroke="#777" marker-end="url(#ar)"/>
+    <g>
+      <rect x="560" y="158" width="150" height="64" rx="14" fill="#1a0a0a" stroke="#542"/>
+      <text x="635" y="186" fill="#e8e8e8" text-anchor="middle">Long-press a word</text>
+      <text x="635" y="206" fill="#9a9a9a" text-anchor="middle">vibration · ring top-left</text>
+      <rect x="380" y="158" width="150" height="64" rx="14" fill="#111" stroke="#262626"/>
+      <text x="455" y="186" fill="#e8e8e8" text-anchor="middle">Audio from that word</text>
+      <text x="455" y="206" fill="#9a9a9a" text-anchor="middle">release → stops</text>
+      <rect x="200" y="158" width="150" height="64" rx="14" fill="#111" stroke="#262626"/>
+      <text x="275" y="186" fill="#e8e8e8" text-anchor="middle">Edit mode</text>
+      <text x="275" y="206" fill="#9a9a9a" text-anchor="middle">fix text · type new segment</text>
+      <rect x="20"  y="158" width="150" height="64" rx="14" fill="#111" stroke="#262626"/>
+      <text x="95"  y="186" fill="#e8e8e8" text-anchor="middle">Force-quit, reopen</text>
+      <text x="95"  y="206" fill="#9a9a9a" text-anchor="middle">everything survives</text>
+    </g>
+    <line x1="556" y1="190" x2="536" y2="190" stroke="#777" marker-end="url(#ar)"/>
+    <line x1="376" y1="190" x2="356" y2="190" stroke="#777" marker-end="url(#ar)"/>
+    <line x1="196" y1="190" x2="176" y2="190" stroke="#777" marker-end="url(#ar)"/>
+  </svg>
+  </div>
+  <h2>Behaviors &amp; States</h2>
+
+  <details open>
+    <summary>Capture — the red record button</summary>
+    <div class="body">
+      <ul>
+        <li>One round red button, bottom right. <b>Tap to start, tap to stop</b> — no separate stop control.</li>
+        <li>Pulses <b>only while the mic hears sound</b>; silence = no pulse (also the "is the mic alive" indicator).</li>
+      </ul>
+      <div class="bubble"><div class="rec live"></div><span class="dim">pulsing only while it hears you</span></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Transcription — after you stop, not live</summary>
+    <div class="body">
+      <ul>
+        <li>Runs on the <b>finished recording</b>, not live while talking (removes the concurrent-mic risk).</li>
+        <li>New grey bubble shows an animated 1-2-3 dot; the user keeps using the app meanwhile.</li>
+        <li><b>Silent recording → no segment added</b>; a "no audio recorded" notice appears instead.</li>
+        <li class="assumption">Unconfirmed: if conversion <i>fails</i> (audio present, no usable text), the bubble stays with a "transcription unavailable" message, audio kept, replay still works.</li>
+      </ul>
+      <div class="bubble"><span class="dots"><span></span><span></span><span></span></span> <span class="dim">converting…</span></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Replay in place — word-precise</summary>
+    <div class="body">
+      <ul>
+        <li><b>View mode only.</b> Long-press any word in a voice bubble.</li>
+        <li>Haptic vibration marks the start; audio starts <b>at that word</b> (not the segment start).</li>
+        <li>Circular progress ring animates at the <b>top-left</b> of the screen.</li>
+        <li><b>Release the finger → playback stops immediately.</b> Ends on its own at the end of the audio.</li>
+        <li class="assumption">Unconfirmed: long-pressing while a playback is running stops it; nothing new starts until a fresh press.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Modes — view &amp; edit</summary>
+    <div class="body">
+      <ul>
+        <li>Toggle at <b>top right</b>, fixed position for the POC (movable is Later).</li>
+        <li><b>View mode:</b> read; long-press a voice-bubble word to replay. Nothing else.</li>
+        <li><b>Edit mode (default on open)</b> — an empty note shows its blinking cursor:
+          <ul>
+            <li>Tap any segment's text to edit it in place; saving is permanent.</li>
+            <li>Tap empty space → cursor → type → a new <b>typed segment</b> in the note's flow.</li>
+          </ul>
+        </li>
+        <li>Editing a voice bubble's text never changes its audio.</li>
+      </ul>
+    </div>
+  </details>
+  <h2>Edge Cases at a Glance</h2>
+  <table>
+    <tr><th>Situation</th><th>What the user sees / gets</th></tr>
+    <tr><td>Empty note</td><td>Plain note, black background, blinking cursor, red round button bottom right</td></tr>
+    <tr><td>Recording, sound</td><td>Button pulses</td></tr>
+    <tr><td>Recording, silence</td><td>Button does not pulse</td></tr>
+    <tr><td>Stopped a silent recording</td><td>No segment; "no audio recorded" notice</td></tr>
+    <tr><td>Conversion in progress</td><td>Grey bubble, animated 1-2-3 dot</td></tr>
+    <tr><td>Conversion succeeds</td><td>Transcript fills the bubble, voice styling kept</td></tr>
+    <tr><td>Conversion fails</td><td><span class="dim">Assumption:</span> "transcription unavailable" message, audio kept, replay works</td></tr>
+    <tr><td>View mode, plain tap on a bubble</td><td>Nothing — view mode is read-only</td></tr>
+    <tr><td>Edit mode, long-press a word</td><td>No playback — long-press belongs to view mode</td></tr>
+    <tr><td>App restarted / force-quit</td><td>Note, segments, text, order, and audio restored exactly</td></tr>
+  </table>
+
+  <h2>Look and Feel</h2>
+  <div class="grid2">
+    <div class="swatch">
+      <h3>Screen: black background</h3>
+      <div class="bubble">What I told the app this morning, it wrote back…</div>
+      <p class="dim" style="margin-top:10px">Voice bubbles: grey, rounded edges, matte and "almost transparent but not quite." Typed segments: plain note text.</p>
+    </div>
+    <div class="swatch">
+      <h3>Record button: round, red</h3>
+      <div class="rec live"></div>
+      <p class="dim">Top-right: the view/edit toggle. Top-left: progress ring during playback.</p>
+    </div>
+  </div>
+
+  <h2>What "Working" Looks Like — checkable on a real Android phone, under a minute</h2>
+  <ol class="body" style="padding:0 0 0 22px">
+    <li>Open the app → one note, blinking cursor, red round button visible.</li>
+    <li>Tap it, talk → button pulses while you speak.</li>
+    <li>Tap again → grey bubble with the 1-2-3 dot appears.</li>
+    <li>Transcript text fills the bubble.</li>
+    <li>View mode; long-press a word mid-sentence → vibration, audio from that word, top-left ring, release stops it.</li>
+    <li>Edit mode; fix a word in the bubble; tap empty space and type a new line.</li>
+    <li>Force-quit, reopen → text, order, and audio all back and replayable.</li>
+  </ol>
+
+  <h2>Now vs. Later</h2>
+  <div class="grid2">
+    <div class="body">
+      <h3 style="margin-top:0">Now — this POC</h3>
+      <ul>
+        <li>One note, one screen, dark look</li>
+        <li>Voice + typed segments in order</li>
+        <li>Post-stop transcription with dot animation</li>
+        <li>Word-precise replay (vibration, ring, release-to-stop)</li>
+        <li>View / edit modes</li>
+        <li>Persistence across restart</li>
+      </ul>
+    </div>
+    <div class="body">
+      <h3 style="margin-top:0">Later — your vision, not dropped</h3>
+      <ul class="later">
+        <li>Home screen with all notes + two round capture buttons</li>
+        <li>Formatting: highlight, color, underline, bold, font size</li>
+        <li>User-movable mode toggle</li>
+        <li>Carried from scope: iOS, sign segments, deletion, search, waveforms, cloud sync</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

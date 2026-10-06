@@ -1,0 +1,18 @@
+# Personal learning context - kept out of commits by default.
+# (This does not keep it out of your AI provider's conversation.)
+/devpost/learner-profile.md
+
+# Local credentials - never commit real secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies / build output
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+*.log
+.DS_Store
