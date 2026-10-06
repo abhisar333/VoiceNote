@@ -1,16 +1,93 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import NoteScreen from './src/screens/NoteScreen';
 import type { NoteMode } from './src/components/ModeToggle';
-import { addTypedSegment, emptyNote, type Note } from './src/features/segments';
+import { getMetering, meteringToLive, startRecording, stopRecording } from './src/features/recorder';
+import { transcribe } from './src/features/transcription/transcri';
+import {
+  addTypedSegment,
+  addVoiceSegment,
+  emptyNote,
+  newSegmentId,
+  removeSegment,
+  setVoiceTranscript,
+  type Note,
+} from './src/features/segments';
+
+const NOTICE_MS = 3500;
 
 /** Root: owns the note and the mode; saves to disk from slice 4 on.
- *  Implements prd.md > States & Edge Cases (restart row, later slices). */
+ *  Slice 2 owns the record → transcribe flow (prd.md > Capture, Transcription). */
 export default function App() {
   const [note, setNote] = useState<Note>(emptyNote);
   // PRD: the app opens in edit mode so an empty note shows its blinking cursor.
   const [mode, setMode] = useState<NoteMode>('edit');
+  const [recording, setRecording] = useState(false);
+  const [live, setLive] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const pendingId = useRef<string | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showNotice = (message: string) => {
+    setNotice(message);
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), NOTICE_MS);
+  };
+
+  // ~10 polls/sec while the mic is open, for the pulse (prd.md > Capture).
+  useEffect(() => {
+    if (!recording) return;
+    const timer = setInterval(() => setLive(meteringToLive(getMetering())), 100);
+    return () => clearInterval(timer);
+  }, [recording]);
+
+  const runTranscription = async (segmentId: string, audioUri: string) => {
+    try {
+      const { words } = await transcribe(audioUri);
+      if (words.length === 0) {
+        // Silent take: no segment, short notice (prd.md > Transcription).
+        setNote((current) => removeSegment(current, segmentId));
+        showNotice('no audio recorded');
+      } else {
+        const text = words.map((word) => word.text).join(' ');
+        setNote((current) => setVoiceTranscript(current, segmentId, text, words));
+      }
+    } catch {
+      // Delay ~700 ms so the 1-2-3 dots animation renders once before the message appears.
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      setNote((current) =>
+        setVoiceTranscript(current, segmentId, 'transcription unavailable', null),
+      );
+    }
+  };
+
+  const handleRecordPress = async () => {
+    if (recording) {
+      setRecording(false);
+      setLive(false);
+      try {
+        const { uri, durationMs } = await stopRecording();
+        const segmentId = pendingId.current ?? newSegmentId();
+        pendingId.current = null;
+        setNote((current) => addVoiceSegment(current, { id: segmentId, audioUri: uri, durationMs }));
+        void runTranscription(segmentId, uri);
+      } catch {
+        showNotice('no audio recorded');
+      }
+      return;
+    }
+
+    const segmentId = newSegmentId();
+    pendingId.current = segmentId;
+    try {
+      await startRecording(segmentId);
+      setRecording(true);
+    } catch (error) {
+      pendingId.current = null;
+      showNotice(error instanceof Error ? error.message : 'could not start recording');
+    }
+  };
 
   return (
     <>
@@ -20,9 +97,10 @@ export default function App() {
         mode={mode}
         onModeChange={setMode}
         onAddTypedSegment={(text) => setNote((current) => addTypedSegment(current, text))}
-        onRecordPress={() => {
-          /* slice 2: recording */
-        }}
+        onRecordPress={handleRecordPress}
+        recording={recording}
+        live={recording && live}
+        notice={notice}
       />
     </>
   );

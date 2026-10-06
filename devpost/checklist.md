@@ -21,7 +21,7 @@ Build mode: learn
   Learner check: Open the app, tap empty space, type a line — it appears in the note; looks black/red/grey as specified.
   Commit: `Scaffold note screen with typed segments`
 
-- [ ] **2. Talk, stop, and your words fill a grey bubble (the kernel)**
+- [x] **2. Talk, stop, and your words fill a grey bubble (the kernel)**
   Becomes usable: Tap the red button → it pulses while it hears you → tap again → grey bubble with 1-2-3 dots → transcript lands in the bubble. A silent take adds nothing and shows "no audio recorded"; a failed transcription keeps the audio with the "transcription unavailable" message.
   Why now: This is scope's Unique Kernel — record, auto-transcribe, replay-ready segment — proven second, early, before any polish. Also the top external dependency (Hugging Face), so failures surface while cheap to fix.
   PRD ref: `prd.md > The Core Journey` (steps 2-5), `prd.md > Capture`, `prd.md > Transcription`, `prd.md > States & Edge Cases`
@@ -67,6 +67,9 @@ Build mode: learn
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
+
+- **Slice 2 learner fixes (reported by the learner check):** on transcription failure the bubble delays the "transcription unavailable" message by ~700 ms, so the 1-2-3 dots animation renders once before the message appears.
+- **Later (deferred, recorded for next session):** re-lift the record-button pulse threshold and treat near-silent levels as "no pulse" — currently a noisy room can keep the button pulsing even when nothing is spoken (report: it pulsed throughout the take). This is the documented fallback in spec.md §Components #4 when the platform never exposes a level; raising the threshold is polish, not required behavior.
 
 - [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
