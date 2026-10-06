@@ -1,13 +1,13 @@
 ---
 doc: checklist
-status: draft
+status: approved
 ---
 <!-- Written by 5-build from the approved spec. Progress state for the build loop:
      tick boxes as slices complete; resume reads this file. Markdown only, always. -->
 
 # Build Checklist
 
-Build mode: [learn or fast — record once chosen; carry forward on resume]
+Build mode: learn
 
 ## Slices
 
