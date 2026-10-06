@@ -11,7 +11,7 @@ Build mode: learn
 
 ## Slices
 
-- [ ] **1. The app runs, and typing a line puts it in your note**
+- [x] **1. The app runs, and typing a line puts it in your note**
   Becomes usable: A running VoiceNote on your phone — black note screen, red round record button (visible, not working yet), top-right view/edit toggle, blinking cursor; in edit mode tapping empty space and typing creates a typed segment that renders as note text.
   Why now: Bootstrapping lives inside slice one per the plan, and a visible screen you can type into gives every later slice somewhere to land. The kernel needs the screen first.
   PRD ref: `prd.md > The Core Journey` (steps 1, 7-typing), `prd.md > Modes`, `prd.md > Look and Feel`
@@ -83,3 +83,5 @@ Reflection: [pending]
 Activity mode: [pending]
 
 ## Revisions
+
+- **Typed-segment entry behavior** (slice 1, discovered in the learner check): the plan didn't say whether Enter ends a typed segment. First implementation made each Enter commit a single line; the learner rejected one-line-per-entry. Decided: Enter inserts a newline *inside* the block, and the block commits when the composer loses focus, when record is pressed, or when switching to view mode. `prd.md > Core Journey` step 7 ("tap empty space and type") and the `TypedSegment.text` shape in `spec.md > Data Model` are unchanged and still accurate. Also fixed: uncommitted draft text was destroyed by the edit→view toggle (the composer unmounts in view mode); the draft now lives in state and commits on mode switch.
