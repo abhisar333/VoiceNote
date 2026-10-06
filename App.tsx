@@ -53,11 +53,11 @@ export default function App() {
         const text = words.map((word) => word.text).join(' ');
         setNote((current) => setVoiceTranscript(current, segmentId, text, words));
       }
-    } catch {
+    } catch (err) {
       // Delay ~700 ms so the 1-2-3 dots animation renders once before the message appears.
       await new Promise((resolve) => setTimeout(resolve, 700));
       const reason =
-        error instanceof Error ? error.message : 'transcription unavailable';
+        err instanceof Error ? err.message : 'transcription unavailable';
       setNote((current) =>
         setVoiceTranscript(current, segmentId, reason, null),
       );
