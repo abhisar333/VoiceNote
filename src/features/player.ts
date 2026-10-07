@@ -1,27 +1,10 @@
-import AudioModule from 'expo-audio';
+import { AudioModule } from 'expo-audio';
 import { Vibration } from 'react-native';
 
-// The AudioPlayer class is only modelled as a type in this SDK version, so it is read
-// off the native module (the hooks do the same internally). Runtime value is a real
-// class; the cast keeps the build clean.
-const PlayerClass = (AudioModule as { AudioPlayer?: unknown }).AudioPlayer as new (
-  source: unknown,
-  updateInterval: number,
-  keepAudioSessionActive: boolean,
-  preferredForwardBufferDuration: number,
-) => {
-  play(): void;
-  pause(): void;
-  stop(): Promise<void>;
-  seekTo(seconds: number, ...args: unknown[]): Promise<void>;
-  getStatus(): unknown;
-  duration: number;
-  currentTime: number;
-  paused: boolean;
-  loop: boolean;
-  volume: number;
-  playbackRate: number;
-};
+// The AudioPlayer class is only re-exported as a type by this SDK version, so the
+// native module object (AudioModule.AudioPlayer) is used directly — same access the
+// hooks do internally. Do NOT default-import this package: it has no default export.
+const PlayerClass = AudioModule.AudioPlayer;
 
 let instance: InstanceType<typeof PlayerClass> | null = null;
 let positionTimer: ReturnType<typeof setInterval> | null = null;
@@ -69,7 +52,9 @@ export function stop() {
   }
   onPosition = null;
   if (instance) {
-    instance.stop().then(() => {});
+    // AudioPlayer has no stop() in this SDK: pause, then release the shared object.
+    instance.pause();
+    instance.remove();
     instance = null;
   }
 }
