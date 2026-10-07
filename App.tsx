@@ -5,6 +5,8 @@ import NoteScreen from './src/screens/NoteScreen';
 import type { NoteMode } from './src/components/ModeToggle';
 import { getMetering, meteringToLive, startRecording, stopRecording } from './src/features/recorder';
 import { transcribe } from './src/features/transcription/transcri';
+import type { VoiceSegment } from './src/features/segments';
+import { startSeek } from './src/features/player';
 import {
   addTypedSegment,
   addVoiceSegment,
@@ -64,6 +66,26 @@ export default function App() {
     }
   };
 
+  // Slice 3: which word is playing, its duration, and the playback head position.
+  const [playback, setPlayback] = useState<{ id: string; wordMs: number; durationMs: number } | null>(null);
+  const [playheadMs, setPlayheadMs] = useState(0);
+  const replayCleanup = useRef<(() => void) | null>(null);
+
+  // Slice 3: start word-precise playback from a voice segment's word timestamp.
+  const startReplay = (segment: VoiceSegment, wordMs: number) => {
+    if (replayCleanup.current) replayCleanup.current();
+    const { cleanup, durationMs } = startSeek(segment.audioUri, wordMs, setPlayheadMs);
+    replayCleanup.current = cleanup;
+    setPlayback({ id: segment.id, wordMs, durationMs });
+  };
+
+  const stopReplay = () => {
+    replayCleanup.current?.();
+    replayCleanup.current = null;
+    setPlayback(null);
+    setPlayheadMs(0);
+  };
+
   const handleRecordPress = async () => {
     if (recording) {
       setRecording(false);
@@ -103,6 +125,10 @@ export default function App() {
         recording={recording}
         live={recording && live}
         notice={notice}
+        playback={playback}
+        playheadMs={playheadMs}
+        onStartReplay={startReplay}
+        onStopReplay={stopReplay}
       />
     </>
   );
