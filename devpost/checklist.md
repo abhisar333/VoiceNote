@@ -86,6 +86,7 @@ Edit outcome: [pending]
 Reflection: [pending]
 Activity mode: [pending]
 
-## Revisions
+- **Slice 3 word-precise replay with progress ring (spec.md > Replay in place):** long-press a voice word in view mode starts playback from that word with a single haptic and the top-left ring; plain taps do nothing; releasing stops; leaving view stops playback. Leap-precise accuracy is the POC's top risk and is verified on-device before this slice is closed.
+- **Note:** the learner check for this slice is still pending on the device.
 
 - **Typed-segment entry behavior** (slice 1, discovered in the learner check): the plan didn't say whether Enter ends a typed segment. First implementation made each Enter commit a single line; the learner rejected one-line-per-entry. Decided: Enter inserts a newline *inside* the block, and the block commits when the composer loses focus, when record is pressed, or when switching to view mode. `prd.md > Core Journey` step 7 ("tap empty space and type") and the `TypedSegment.text` shape in `spec.md > Data Model` are unchanged and still accurate. Also fixed: uncommitted draft text was destroyed by the edit→view toggle (the composer unmounts in view mode); the draft now lives in state and commits on mode switch.
