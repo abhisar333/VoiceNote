@@ -69,7 +69,8 @@ Build mode: learn
 ## Final Review
 
 - **Slice 2 learner fixes (reported by the learner check):** on transcription failure the bubble delays the "transcription unavailable" message by ~700 ms, so the 1-2-3 dots animation renders once before the message appears.
-- **Later (deferred, recorded for next session):** re-lift the record-button pulse threshold and treat near-silent levels as "no pulse" — currently a noisy room can keep the button pulsing even when nothing is spoken (report: it pulsed throughout the take). This is the documented fallback in spec.md §Components #4 when the platform never exposes a level; raising the threshold is polish, not required behavior.
+- **Pulse while speaking:** question asked, answer not yet received — decision deferred with the later note (raise threshold + treat near-silent as no-pulse) applied to the checklist for the next session.
+- **Language decision (left as-is):** auto-detection returned correct English (`sky or heven`); forcing `language: "en"` declined by the learner for now. Revisit later if mis-transcription becomes an issue.
 
 - [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
