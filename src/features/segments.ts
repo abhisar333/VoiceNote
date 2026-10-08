@@ -34,3 +34,30 @@ export function addTypedSegment(note: Note, text: string): Note {
   const segment: TypedSegment = { id: newSegmentId(), kind: 'typed', text: trimmed };
   return { segments: [...note.segments, segment], updatedAt: Date.now() };
 }
+
+/** Append a voice segment straight after stop, while it still shows the 1-2-3 dots. */
+export function addVoiceSegment(
+  note: Note,
+  segment: { id: string; audioUri: string; durationMs: number },
+): Note {
+  const voice: VoiceSegment = { ...segment, kind: 'voice', text: '', words: null };
+  return { segments: [...note.segments, voice], updatedAt: Date.now() };
+}
+
+/** Dots → transcript (words set), or dots → failure message (words stays null). */
+export function setVoiceTranscript(note: Note, id: string, text: string, words: Word[] | null): Note {
+  return {
+    segments: note.segments.map((segment) =>
+      segment.id === id && segment.kind === 'voice' ? { ...segment, text, words } : segment,
+    ),
+    updatedAt: Date.now(),
+  };
+}
+
+/** A silent take leaves no segment at all (prd.md > Transcription). */
+export function removeSegment(note: Note, id: string): Note {
+  return {
+    segments: note.segments.filter((segment) => segment.id !== id),
+    updatedAt: Date.now(),
+  };
+}

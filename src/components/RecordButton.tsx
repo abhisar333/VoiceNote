@@ -1,26 +1,53 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Pressable, StyleSheet } from 'react-native';
 
 type Props = {
   onPress: () => void;
-  /** Pulses only while the mic hears sound (prd.md > Capture) — slice 2 wires this. */
+  /** True while the mic is recording — shows the stop square. */
+  recording?: boolean;
+  /** True only while the mic hears sound; silent recording holds still (prd.md > Capture). */
   live?: boolean;
 };
 
 /** Round red capture button, bottom right. Tap to start, tap to stop. */
-export default function RecordButton({ onPress, live = false }: Props) {
+export default function RecordButton({ onPress, recording = false, live = false }: Props) {
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!live) {
+      pulse.stopAnimation();
+      pulse.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.14, duration: 380, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 380, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [live, pulse]);
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Record"
-      onPress={onPress}
-      style={[styles.button, live && styles.live]}
-    >
-      {live ? <Pressable style={styles.stop} /> : null}
-    </Pressable>
+    <Animated.View style={[styles.wrapper, { transform: [{ scale: pulse }] }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={recording ? 'Stop recording' : 'Record'}
+        onPress={onPress}
+        style={[styles.button, live && styles.live]}
+      >
+        {recording ? <Animated.View style={styles.stop} /> : null}
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   button: {
     width: 64,
     height: 64,
