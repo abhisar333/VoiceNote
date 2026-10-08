@@ -69,6 +69,7 @@ Build mode: learn
 ## Final Review
 
 - **Slice 2 learner fixes (reported by the learner check):** on transcription failure the bubble delays the "transcription unavailable" message by ~700 ms, so the 1-2-3 dots animation renders once before the message appears.
+- **Transcription provider: Hugging Face → Groq (decision + build discovery).** During the slice-2/slice-3 learner check, HF's Inference Providers began returning **402 Payment Required** ("Free monthly limit reached" per HF docs/forum) — their free users get no monthly credits now. Learner (no payment method) agreed to swap; the spec's transcription facade meant only `transcription/huggingFace.ts` → `transcription/groq.ts` changed, the app behavior (dots → word-timed transcript) is unchanged. `spec.md` Stack, External Services, Data Flow, and File Structure updated to match. Groq free developer plan: `whisper-large-v3-turbo` with word-level timestamps, no card, generous audio-seconds limits.
 - **Pulse while speaking:** question asked, answer not yet received — decision deferred with the later note (raise threshold + treat near-silent as no-pulse) applied to the checklist for the next session.
 - **Language decision (left as-is):** auto-detection returned correct English (`sky or heven`); forcing `language: "en"` declined by the learner for now. Revisit later if mis-transcription becomes an issue.
 

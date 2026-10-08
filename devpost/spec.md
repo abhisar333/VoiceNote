@@ -9,7 +9,7 @@ status: approved
 
 ## How This Works, In Plain Language
 
-You open the app and see **one dark note screen**. You tap the round red button and talk; the button pulses while it hears you. When you tap again, a grey bubble appears with animated dots — while those dots run, the app is **sending your finished recording to a free Whisper model on Hugging Face**, which sends back the words *with the time each word was spoken*. The words land in the bubble and stay there. In view mode you read the note like normal text; when you long-press any word in a voice bubble, the phone vibrates and the recording starts **from that exact word**, with a little ring animating in the top-left corner until you lift your finger. The app's own memory is a single JSON file on the phone: which segments exist, their text, their order, where each audio file lives, and the word timestamps. Force-quit the app and everything comes back. That's the whole machine — one screen, one file of text, one round-trip to the cloud for text.
+You open the app and see **one dark note screen**. You tap the round red button and talk; the button pulses while it hears you. When you tap again, a grey bubble appears with animated dots — while those dots run, the app is **sending your finished recording to a free Whisper model on Groq**, which sends back the words *with the time each word was spoken*. The words land in the bubble and stay there. In view mode you read the note like normal text; when you long-press any word in a voice bubble, the phone vibrates and the recording starts **from that exact word**, with a little ring animating in the top-left corner until you lift your finger. The app's own memory is a single JSON file on the phone: which segments exist, their text, their order, where each audio file lives, and the word timestamps. Force-quit the app and everything comes back. That's the whole machine — one screen, one file of text, one round-trip to the cloud for text.
 
 ## Stack
 
@@ -20,7 +20,7 @@ You open the app and see **one dark note screen**. You tap the round red button 
 | UI | Single screen, no navigation library | PRD is one screen; React Navigation from DESIGN.md 2.2 is unnecessary here |
 | Audio record + playback | **`expo-audio`** | Replaces DESIGN.md's `expo-av` (deprecated, removal in SDK 55); record, play, seek |
 | Media + note storage | **`expo-file-system`** | Audio files *and* the note's JSON file both live on the phone |
-| Speech-to-text | **Hugging Face Inference API** (Whisper) — learner decision | Replaces DESIGN.md 2.2's `expo-speech-recognition`: PRD decided transcription happens **after** stop, from the finished file, with word timestamps; the on-device recognizer can't do file-based transcription with word timings |
+| Speech-to-text | **Groq free tier** (Whisper `whisper-large-v3-turbo`) — revised from Hugging Face Inference API (see checklist Revisions) | Replaces DESIGN.md 2.2's `expo-speech-recognition`: PRD decided transcription happens **after** stop, from the finished file, with word timestamps; the on-device recognizer can't do file-based transcription with word timings. Groq chosen for the no-card free limits. |
 | Persistence model | **One `note.json`** — learner decision | Replaces DESIGN.md 3.1's SQLite schema (which goes to the upgrade path); one note does not need tables |
 | Vibration | React Native built-in `Vibration.vibrate()` | No package, works in Expo Go |
 | Haptics/permissions | Expo runtime permissions (mic) | No custom native module → **Expo Go compatible** (see *Where It Runs*) |
@@ -75,7 +75,7 @@ Develops: prd.md *Product Decisions* (post-stop transcription), scope *The POC B
 ### 8. `src/features/transcription/` — the transcriber
 
 - `types.ts`: the contract — `transcribe(audioUri) → { words: Word[] }` where each word has `text`, `startMs`, `endMs` (timestamps relative to the recording's start).
-- `huggingFace.ts`: the only implementation. Reads the file, POSTs it to the Hugging Face Inference API with `EXPO_PUBLIC_HF_TOKEN` (from `.env`, never committed), requests word-level timestamps, maps the response into `Word[]`.
+- `groq.ts`: the only implementation. Reads the file, POSTs it to the Groq speech-to-text endpoint with `GROQ_API_KEY` (from `.env`, never committed), requests word-level timestamps (`timestamp_granularities[]=word`), maps the response into `Word[]`. (Provider was Hugging Face at spec time; HF's free tier began returning 402 — see checklist Revisions.)
 - `transcri.ts`: thin facade so swapping in Google later is this folder only (learner decision).
 - **Empty result → PRD's "no audio recorded" notice** (segment not added). **Error/timeout → PRD's "transcription unavailable" bubble** (audio kept, replay works).
 - Cold-start note: the first call to a free endpoint can take ~15–30 s; the PRD's 1-2-3 dots state is the cover, and a visible failure beats a hang — timeouts are bounded.
@@ -123,7 +123,7 @@ type Note = { segments: Segment[]; updatedAt: number };  // the whole document
 1. User taps `RecordButton` → `recorder.start()` → mic captures.
 2. Tap again → `recorder.stop()` → file moved to `documents/recordings/`.
 3. A `voice` segment (`words: null`) is appended to the note in state → bubble shows the 1-2-3 dots → `noteStore.saveNote()` persists it.
-4. `transcription/huggingFace.transcribe(audioUri)` → `Word[]` → segment gets `text` + `words` → save again.
+4. `transcription/groq.transcribe(audioUri)` → `Word[]` → segment gets `text` + `words` → save again.
 5. View mode: long-press a word → `player.play(segment.audioUri, word.startMs)` + vibrate → `ProgressRing` animates → release → stop.
 6. Edit mode: tap text → edit → `segments.editText()` → save.
 7. Restart → `noteStore.loadNote()` → same note, same order, same audio paths.
@@ -133,7 +133,7 @@ type Note = { segments: Segment[]; updatedAt: number };  // the whole document
 **Primary path — Expo Go (zero build):**
 
 1. On your machine: Node installed, `npm install` in the project root.
-2. Put your Hugging Face token in `.env` as `EXPO_PUBLIC_HF_TOKEN=hf_...` (gitignored; `.env.example` lists the name).
+2. Put your Groq key in `.env` as `GROQ_API_KEY=gsk_...` (gitignored; `.env.example` lists the name).
 3. `npx expo start` → on the phone (same Wi-Fi), open **Expo Go** (Android) → scan the QR code.
 4. First record tap prompts for microphone permission — allow it.
 5. Internet needed only for the transcription round-trip; everything else is local.
@@ -150,8 +150,7 @@ type Note = { segments: Segment[]; updatedAt: number };  // the whole document
 | Expo docs | https://docs.expo.dev/ | `npx expo start`, SDK management |
 | `expo-audio` | https://docs.expo.dev/versions/latest/sdk/audio/ | record / play / seek |
 | `expo-file-system` | https://docs.expo.dev/versions/latest/sdk/filesystem/ | permanent audio + `note.json` |
-| Hugging Face Inference API | https://huggingface.co/docs/api-inference/ | free token; upload + word timestamps |
-| Whisper speech-to-text params | https://huggingface.co/docs/api-inference/detailed_parameters/speech2text | exact payload for word-level timestamps confirmed against this during build |
+| Groq speech-to-text | https://console.groq.com/docs/speech-to-text | free developer key (no card); upload + word timestamps — payload confirmed against this during build |
 | React Native `Vibration` | https://reactnative.dev/docs/vibration | replay start marker |
 | Expo environment vars | https://docs.expo.dev/guides/environment-variables/ | `EXPO_PUBLIC_` prefix |
 
@@ -192,7 +191,7 @@ Noteapp/
 │       ├── noteStore.ts       # load/save documents/note.json, audio paths
 │       └── transcription/
 │           ├── transcri.ts    # the swappable facade (interface + default export)
-│           ├── huggingFace.ts # HF upload, word-timestamp response mapping
+│           ├── groq.ts # Groq upload, word-timestamp response mapping
 │           └── types.ts       # Word/Transcript shapes
 │
 ├── __tests__/                 # segments.ts tests (jest-expo preset) — optional in the POC
