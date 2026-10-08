@@ -1,4 +1,4 @@
-import { File } from 'expo-file-system';
+import { File, UploadType } from 'expo-file-system';
 
 import type { Transcript, Word } from './types';
 
@@ -16,35 +16,37 @@ const TIMEOUT_MS = 30_000;
 type GroqWord = { word: string; start: number; end: number };
 type GroqResult = { text?: string; words?: GroqWord[] };
 
-/** Upload the finished file and map the word-level response into Word[]. */
+/** Upload the finished file and map the word-level response into Word[].
+ *  Uses expo-file-system's native multipart upload: Expo SDK 57's fetch rejects
+ *  React Native's { uri } FormData parts ("uri is not supported for React Native's
+ *  FormData"), so the file must be sent through the native upload path. */
 export async function transcribe(audioUri: string): Promise<Transcript> {
   const token = process.env.EXPO_PUBLIC_GROQ_API_KEY;
   if (!token) throw new Error('EXPO_PUBLIC_GROQ_API_KEY is missing from .env');
 
-  const form = new FormData();
-  form.append('file', {
-    uri: audioUri,
-    name: 'recording.m4a',
-    type: 'audio/m4a',
-  } as unknown as Blob);
-  form.append('model', MODEL);
-  form.append('response_format', 'verbose_json');
-  // Word-level timestamps — the PRD's replay-in-place promise (spec.md > Risks #1).
-  form.append('timestamp_granularities[]', 'word');
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(ENDPOINT, {
-      method: 'POST',
+    const result = await new File(audioUri).upload(ENDPOINT, {
+      httpMethod: 'POST',
+      uploadType: UploadType.MULTIPART,
+      fieldName: 'file',
+      mimeType: 'audio/m4a',
       headers: { Authorization: `Bearer ${token}` },
-      body: form,
+      parameters: {
+        model: MODEL,
+        response_format: 'verbose_json',
+        // Word-level timestamps — the PRD's replay-in-place promise (spec.md > Risks #1).
+        'timestamp_granularities[]': 'word',
+      },
       signal: controller.signal,
     });
-    if (!response.ok) {
-      throw new Error(`transcription request failed (${response.status})`);
+
+    if (result.status < 200 || result.status >= 300) {
+      throw new Error(`transcription request failed (${result.status})`);
     }
-    const payload: GroqResult = await response.json();
+
+    const payload: GroqResult = JSON.parse(result.body);
     return { words: toWords(payload) };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
