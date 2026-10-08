@@ -18,8 +18,8 @@ type GroqResult = { text?: string; words?: GroqWord[] };
 
 /** Upload the finished file and map the word-level response into Word[]. */
 export async function transcribe(audioUri: string): Promise<Transcript> {
-  const token = process.env.GROQ_API_KEY;
-  if (!token) throw new Error('GROQ_API_KEY is missing from .env');
+  const token = process.env.EXPO_PUBLIC_GROQ_API_KEY;
+  if (!token) throw new Error('EXPO_PUBLIC_GROQ_API_KEY is missing from .env');
 
   const form = new FormData();
   form.append('file', {

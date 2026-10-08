@@ -75,7 +75,7 @@ Develops: prd.md *Product Decisions* (post-stop transcription), scope *The POC B
 ### 8. `src/features/transcription/` — the transcriber
 
 - `types.ts`: the contract — `transcribe(audioUri) → { words: Word[] }` where each word has `text`, `startMs`, `endMs` (timestamps relative to the recording's start).
-- `groq.ts`: the only implementation. Reads the file, POSTs it to the Groq speech-to-text endpoint with `GROQ_API_KEY` (from `.env`, never committed), requests word-level timestamps (`timestamp_granularities[]=word`), maps the response into `Word[]`. (Provider was Hugging Face at spec time; HF's free tier began returning 402 — see checklist Revisions.)
+- `groq.ts`: the only implementation. Reads the file, POSTs it to the Groq speech-to-text endpoint with `EXPO_PUBLIC_GROQ_API_KEY` (from `.env`, never committed; the `EXPO_PUBLIC_` prefix is required — Expo only exposes prefixed vars to the app), requests word-level timestamps (`timestamp_granularities[]=word`), maps the response into `Word[]`. (Provider was Hugging Face at spec time; HF's free tier began returning 402 — see checklist Revisions.)
 - `transcri.ts`: thin facade so swapping in Google later is this folder only (learner decision).
 - **Empty result → PRD's "no audio recorded" notice** (segment not added). **Error/timeout → PRD's "transcription unavailable" bubble** (audio kept, replay works).
 - Cold-start note: the first call to a free endpoint can take ~15–30 s; the PRD's 1-2-3 dots state is the cover, and a visible failure beats a hang — timeouts are bounded.
@@ -133,7 +133,7 @@ type Note = { segments: Segment[]; updatedAt: number };  // the whole document
 **Primary path — Expo Go (zero build):**
 
 1. On your machine: Node installed, `npm install` in the project root.
-2. Put your Groq key in `.env` as `GROQ_API_KEY=gsk_...` (gitignored; `.env.example` lists the name).
+2. Put your Groq key in `.env` as `EXPO_PUBLIC_GROQ_API_KEY=gsk_...` (gitignored; `.env.example` lists the name).
 3. `npx expo start` → on the phone (same Wi-Fi), open **Expo Go** (Android) → scan the QR code.
 4. First record tap prompts for microphone permission — allow it.
 5. Internet needed only for the transcription round-trip; everything else is local.
