@@ -31,7 +31,7 @@ Build mode: learn
   Learner check: Record a 5-second sentence and watch the text appear; record 3 seconds of silence and see the notice instead of a segment.
   Commit: `Add voice capture with Hugging Face transcription`
 
-- [ ] **3. Long-press a word and the audio starts at that word**
+- [x] **3. Long-press a word and the audio starts at that word**
   Becomes usable: In view mode, long-press any word in a voice bubble → vibration → playback begins from that word with the ring animating top-left → release stops. Plain taps do nothing; the toggle genuinely switches view/edit.
   Why now: Word-precise replay is the PRD's hardest promise (spec risk #1) — prove it on a real device before polishing anything else. View mode exists here because replay needs it.
   PRD ref: `prd.md > Replay in place`, `prd.md > The Core Journey` (step 6), `prd.md > Modes` (view side)
@@ -88,7 +88,7 @@ Reflection: [pending]
 Activity mode: [pending]
 
 - **Slice 3 word-precise replay with progress ring (spec.md > Replay in place):** long-press a voice word in view mode starts playback from that word with a single haptic and the top-left ring; plain taps do nothing; releasing stops; leaving view stops playback. Leap-precise accuracy is the POC's top risk and is verified on-device before this slice is closed.
-- **Note:** the learner check for this slice is still pending on the device.
+- **Slice 3 learner check completed on device:** long-press start + haptic + ring verified; release-to-stop, natural-end ring clear, and normal wrapped-text layout fixed after learner feedback (commits 7d01cf1, 88fa72d).
 
 - **Typed-segment entry behavior** (slice 1, discovered in the learner check): the plan didn't say whether Enter ends a typed segment. First implementation made each Enter commit a single line; the learner rejected one-line-per-entry. Decided: Enter inserts a newline *inside* the block, and the block commits when the composer loses focus, when record is pressed, or when switching to view mode. `prd.md > Core Journey` step 7 ("tap empty space and type") and the `TypedSegment.text` shape in `spec.md > Data Model` are unchanged and still accurate. Also fixed: uncommitted draft text was destroyed by the edit→view toggle (the composer unmounts in view mode); the draft now lives in state and commits on mode switch.
 
