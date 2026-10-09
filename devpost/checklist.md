@@ -63,7 +63,7 @@ Build mode: learn
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 2 (the kernel: record → text) since feedback there shapes replay and editing
+- [x] Early usable behavior explored — after slice 2 (the kernel: record → text) since feedback there shapes replay and editing
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
