@@ -7,9 +7,11 @@ import { getMetering, meteringToLive, startRecording, stopRecording } from './sr
 import { transcribe } from './src/features/transcription/transcri';
 import type { VoiceSegment } from './src/features/segments';
 import { startSeek } from './src/features/player';
+import { loadNote, saveNote } from './src/features/noteStore';
 import {
   addTypedSegment,
   addVoiceSegment,
+  editSegmentText,
   emptyNote,
   newSegmentId,
   removeSegment,
@@ -30,6 +32,29 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const pendingId = useRef<string | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Slice 4: saves stay off until the disk load has settled (see the load effect).
+  const readyToSave = useRef(false);
+
+  // Slice 4: restore the note from documents/note.json on launch (spec > Data Flow 7).
+  // The local read resolves in milliseconds; the guard keeps it from clobbering
+  // anything the user does before it lands.
+  useEffect(() => {
+    let cancelled = false;
+    void loadNote().then((stored) => {
+      if (cancelled) return;
+      if (stored) setNote(stored);
+      readyToSave.current = true;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Slice 4: every change is written back to note.json (spec > Data Flow 6, "simple is fine").
+  useEffect(() => {
+    if (!readyToSave.current) return;
+    saveNote(note);
+  }, [note]);
 
   const showNotice = (message: string) => {
     setNotice(message);
@@ -127,6 +152,7 @@ export default function App() {
         mode={mode}
         onModeChange={setMode}
         onAddTypedSegment={(text) => setNote((current) => addTypedSegment(current, text))}
+        onEditText={(id, text) => setNote((current) => editSegmentText(current, id, text))}
         onRecordPress={handleRecordPress}
         recording={recording}
         live={recording && live}

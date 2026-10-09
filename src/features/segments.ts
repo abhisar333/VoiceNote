@@ -61,3 +61,43 @@ export function removeSegment(note: Note, id: string): Note {
     updatedAt: Date.now(),
   };
 }
+
+/** Edit a segment's text in place (prd.md > Modes: "Saving an edit is permanent").
+ *  Voice audio is never touched by an edit. Word timings are remapped onto the new
+ *  words so replay still works after a fix: same word count keeps exact timings
+ *  (the PRD's typo-fix case); a different count spreads them across the original span. */
+export function editSegmentText(note: Note, id: string, text: string): Note {
+  const trimmed = text.trim();
+  if (trimmed === '') return note; // an empty edit keeps what was there
+  return {
+    segments: note.segments.map((segment) => {
+      if (segment.id !== id) return segment;
+      if (segment.kind === 'typed') return { ...segment, text: trimmed };
+      return { ...segment, text: trimmed, words: remapWords(segment.words, trimmed) };
+    }),
+    updatedAt: Date.now(),
+  };
+}
+
+/** Fit the transcription's word timings to newly edited text (see editSegmentText). */
+function remapWords(words: Word[] | null, text: string): Word[] | null {
+  if (!words || words.length === 0) return words;
+  const parts = text.split(/\s+/).filter((part) => part !== '');
+  if (parts.length === 0) return words;
+  if (parts.length === words.length) {
+    return parts.map((part, index) => ({
+      text: part,
+      startMs: words[index].startMs,
+      endMs: words[index].endMs,
+    }));
+  }
+  // Word count changed: spread evenly across the segment's original span.
+  const spanStart = words[0].startMs;
+  const span = Math.max(1, words[words.length - 1].endMs - spanStart);
+  const each = span / parts.length;
+  return parts.map((part, index) => ({
+    text: part,
+    startMs: Math.round(spanStart + index * each),
+    endMs: Math.round(spanStart + (index + 1) * each),
+  }));
+}

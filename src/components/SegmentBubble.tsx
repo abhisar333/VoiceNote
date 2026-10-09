@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { Segment, VoiceSegment, Word } from '../features/segments';
 import type { NoteMode } from './ModeToggle';
@@ -11,6 +11,8 @@ type Props = {
   onReplayWord?: (segment: VoiceSegment, startMs: number) => void;
   /** Called when the finger that started a replay lifts (view mode only). */
   onReplayEnd?: () => void;
+  /** Slice 4: called on blur when the text was changed in place (edit mode only). */
+  onEditText?: (id: string, text: string) => void;
 };
 
 /** The 1-2-3 dots while the finished recording is with the transcriber (prd.md > Transcription). */
@@ -88,8 +90,55 @@ export default function SegmentBubble({
   mode,
   onReplayWord,
   onReplayEnd,
+  onEditText,
 }: Props) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const prevMode = useRef(mode);
+
+  const beginEdit = () => {
+    setDraft(segment.text);
+    setEditing(true);
+  };
+
+  const commitEdit = () => {
+    const trimmed = draft.trim();
+    if (trimmed !== '' && trimmed !== segment.text) onEditText?.(segment.id, trimmed);
+    setEditing(false);
+  };
+
+  // Leaving edit mode unmounts the input without firing blur (the slice-1 lesson),
+  // so commit on the mode switch itself.
+  useEffect(() => {
+    if (prevMode.current === 'edit' && mode === 'view' && editing) commitEdit();
+    prevMode.current = mode;
+  }, [mode, editing]);
+
+  // In-place editor (prd.md > Modes: "Tap any segment's text to edit it in place").
+  if (editing) {
+    const input = (
+      <TextInput
+        style={[segment.kind === 'typed' ? styles.typed : styles.voiceText, styles.editor]}
+        value={draft}
+        onChangeText={setDraft}
+        autoFocus
+        multiline
+        onBlur={commitEdit}
+        onEndEditing={commitEdit}
+      />
+    );
+    return segment.kind === 'typed' ? input : <View style={styles.voice}>{input}</View>;
+  }
+
   if (segment.kind === 'typed') {
+    // Edit mode: tap the text to fix it. View mode stays read-only.
+    if (mode === 'edit' && onEditText) {
+      return (
+        <Pressable onPress={beginEdit}>
+          <Text style={styles.typed}>{segment.text}</Text>
+        </Pressable>
+      );
+    }
     return <Text style={styles.typed}>{segment.text}</Text>;
   }
 
@@ -113,13 +162,21 @@ export default function SegmentBubble({
     );
   }
 
+  if (transcribing) {
+    return (
+      <View style={styles.voice}>
+        <TranscribingDots />
+      </View>
+    );
+  }
+
+  // Voice bubble with text: tappable for editing in edit mode; audio untouched (prd.md > Modes).
+  const body = (
+    <Text style={[styles.voiceText, failed && styles.failedText]}>{segment.text}</Text>
+  );
   return (
     <View style={styles.voice}>
-      {transcribing ? (
-        <TranscribingDots />
-      ) : (
-        <Text style={[styles.voiceText, failed && styles.failedText]}>{segment.text}</Text>
-      )}
+      {mode === 'edit' && onEditText ? <Pressable onPress={beginEdit}>{body}</Pressable> : body}
     </View>
   );
 }
@@ -159,6 +216,11 @@ const styles = StyleSheet.create({
     color: '#d8d8d8',
     fontSize: 17,
     lineHeight: 26,
+  },
+  /** In-place editor: same type style, no chrome (prd.md > Modes). */
+  editor: {
+    padding: 0,
+    borderWidth: 0,
   },
   failedText: {
     color: '#8a8a8a',

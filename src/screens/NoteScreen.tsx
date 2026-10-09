@@ -34,6 +34,8 @@ type Props = {
   onStartReplay: (segment: VoiceSegment, wordMs: number) => void;
   /** Slice 3: stop the current playback. */
   onStopReplay: () => void;
+  /** Slice 4: permanent in-place edit of a segment's text (prd.md > Modes). */
+  onEditText: (id: string, text: string) => void;
 };
 
 /** The one screen: ring slot (top-left) · toggle (top-right) · segments · record button (bottom-right).
@@ -51,6 +53,7 @@ export default function NoteScreen({
   playheadMs,
   onStartReplay,
   onStopReplay,
+  onEditText,
 }: Props) {
   const composerRef = useRef<TextInput>(null);
   // The draft lives in state, not only inside the TextInput: view mode unmounts the
@@ -107,6 +110,7 @@ export default function NoteScreen({
             mode={mode}
             onReplayWord={(segment, wordMs) => onStartReplay(segment, wordMs)}
             onReplayEnd={onStopReplay}
+            onEditText={onEditText}
           />
         ))}
 
