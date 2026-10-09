@@ -68,6 +68,9 @@ function toWords(result: GroqResult | undefined): Word[] {
   for (const entry of raw) {
     const text = entry.word.trim();
     if (text === '') continue;
+    // Whisper emits punctuation-only "words" (e.g. ".") on silent audio — dropping
+    // them lets the PRD's silent-take path see a genuinely empty transcript.
+    if (!/[\p{L}\p{N}]/u.test(text)) continue;
     if (entry.start == null || entry.end == null || entry.end <= entry.start) continue;
     words.push({
       text,
