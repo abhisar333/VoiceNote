@@ -41,7 +41,7 @@ Build mode: learn
   Learner check: Long-press a word in the middle of a voice bubble — does it vibrate, start at that word, show the ring, and stop when you lift your finger?
   Commit: `Add word-precise replay with progress ring`
 
-- [ ] **4. Fix a mistranscription, and everything survives a force-quit**
+- [x] **4. Fix a mistranscription, and everything survives a force-quit**
   Becomes usable: In edit mode tapping a bubble's text edits it (audio untouched); every change — typed segments, voice transcripts, order — saves to note.json, and a force-quit restores the full note including replayable audio.
   Why now: Persistence is where the data model gets its first real test; editing is the PRD's core "retrieve and correct" half. Doing it once, after both segment types exist, covers the whole model instead of half of it twice.
   PRD ref: `prd.md > Modes` (edit side), `prd.md > States & Edge Cases` (restart row, edit rows), `prd.md > The Core Journey` (steps 7-8)
@@ -91,6 +91,7 @@ Activity mode: [pending]
 - **Slice 3 learner check completed on device:** long-press start + haptic + ring verified; release-to-stop, natural-end ring clear, and normal wrapped-text layout fixed after learner feedback (commits 7d01cf1, 88fa72d).
 
 - **Slice 4 interpretation (PRD silent):** after a transcript edit, view mode must show the *edited* text *and* keep word-precise replay working. Decision: `editSegmentText` remaps the word timings onto the new text — same word count keeps each word's exact timing (the PRD's typo-fix case); a different count spreads the words evenly across the segment's original time span. Voice audio itself is never changed by an edit (prd.md > Modes).
+- **Slice 4 learner check completed on device:** tap-to-edit works for typed and voice text (after a Metro restart cleared a stale bundle); force-quit restored text, order, and replayable audio exactly as left.
 - **Typed-segment entry behavior** (slice 1, discovered in the learner check): the plan didn't say whether Enter ends a typed segment. First implementation made each Enter commit a single line; the learner rejected one-line-per-entry. Decided: Enter inserts a newline *inside* the block, and the block commits when the composer loses focus, when record is pressed, or when switching to view mode. `prd.md > Core Journey` step 7 ("tap empty space and type") and the `TypedSegment.text` shape in `spec.md > Data Model` are unchanged and still accurate. Also fixed: uncommitted draft text was destroyed by the edit→view toggle (the composer unmounts in view mode); the draft now lives in state and commits on mode switch.
 
 - **Verification lesson (from the Groq FormData bug):** a machine-side check that validates the API contract (endpoint, params, response shape) does **not** validate the runtime transport path. Node's `FormData` accepted the `{ uri }` part that Expo SDK 57's fetch rejects on device. Rule for this project from here: verify the *transport* (how the file/bytes actually travel) on the same runtime the app ships on — i.e. on the device through the app's real code path — not only from a Node script. Prefer the SDK's documented upload primitive (`File.upload`, `expo/fetch`) over generic web patterns when building against Expo.
