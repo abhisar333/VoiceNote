@@ -51,7 +51,7 @@ Build mode: learn
   Learner check: Record something, fix a wrong word, force-quit the app, reopen — is the note (text, order, audio) exactly as you left it?
   Commit: `Persist note and allow transcript editing`
 
-- [ ] **5. The full demo run, edge cases included**
+- [x] **5. The full demo run, edge cases included**
   Becomes usable: The complete PRD journey works in one uninterrupted flow on a real Android phone — the seven checkable steps, in order, from cold open to replay after restart.
   Why now: The demo is the POC's proof; walking it end to end is the last thing before final review, once every piece exists.
   PRD ref: `prd.md > What "Working" Looks Like`, `prd.md > States & Edge Cases` (full table)
