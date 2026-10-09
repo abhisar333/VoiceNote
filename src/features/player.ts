@@ -27,7 +27,9 @@ export function startSeek(
 ): { durationMs: number; cleanup: () => void } {
   stop();
 
-  const player = new PlayerClass(audioUri, 1000, true, 0);
+  // The native constructor takes the resolved source Map — same as useAudioPlayer
+  // does via resolveSource(): a bare string throws "expected Map, got a string".
+  const player = new PlayerClass({ uri: audioUri }, 1000, true, 0);
   const durationMs = Math.round(player.duration * 1000);
 
   player.play();
