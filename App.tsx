@@ -74,7 +74,13 @@ export default function App() {
   // Slice 3: start word-precise playback from a voice segment's word timestamp.
   const startReplay = (segment: VoiceSegment, wordMs: number) => {
     if (replayCleanup.current) replayCleanup.current();
-    const { cleanup, durationMs } = startSeek(segment.audioUri, wordMs, setPlayheadMs);
+    const { cleanup, durationMs } = startSeek(segment.audioUri, wordMs, setPlayheadMs, () => {
+      // Natural end: audio ran out on its own → clear the ring; the player is
+      // already released by stop() inside startSeek's poll.
+      replayCleanup.current = null;
+      setPlayback(null);
+      setPlayheadMs(0);
+    });
     replayCleanup.current = cleanup;
     setPlayback({ id: segment.id, wordMs, durationMs });
   };

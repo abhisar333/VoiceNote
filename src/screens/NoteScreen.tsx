@@ -106,6 +106,7 @@ export default function NoteScreen({
             segment={segment}
             mode={mode}
             onReplayWord={(segment, wordMs) => onStartReplay(segment, wordMs)}
+            onReplayEnd={onStopReplay}
           />
         ))}
 

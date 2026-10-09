@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { Segment, VoiceSegment } from '../features/segments';
+import type { Segment, VoiceSegment, Word } from '../features/segments';
 import type { NoteMode } from './ModeToggle';
 
 type Props = {
@@ -9,6 +9,8 @@ type Props = {
   mode: NoteMode;
   /** Called when the user long-presses a voice word (view mode only). */
   onReplayWord?: (segment: VoiceSegment, startMs: number) => void;
+  /** Called when the finger that started a replay lifts (view mode only). */
+  onReplayEnd?: () => void;
 };
 
 /** The 1-2-3 dots while the finished recording is with the transcriber (prd.md > Transcription). */
@@ -42,10 +44,51 @@ function TranscribingDots() {
   );
 }
 
+/** One word of a voice bubble: long-press starts the replay, lifting that same finger
+ *  stops it (prd.md > Replay in place: "Releasing the finger stops playback
+ *  immediately"). The flag keeps a plain tap a true no-op — it must not stop playback
+ *  that a different word started. */
+function VoiceWord({
+  segment,
+  word,
+  onReplayWord,
+  onReplayEnd,
+}: {
+  segment: VoiceSegment;
+  word: Word;
+  onReplayWord?: (segment: VoiceSegment, startMs: number) => void;
+  onReplayEnd?: () => void;
+}) {
+  const playingHere = useRef(false);
+  return (
+    <Pressable
+      onPress={() => {}}
+      onLongPress={() => {
+        playingHere.current = true;
+        onReplayWord?.(segment, word.startMs);
+      }}
+      onPressOut={() => {
+        if (playingHere.current) {
+          playingHere.current = false;
+          onReplayEnd?.();
+        }
+      }}
+      style={styles.word}
+    >
+      <Text style={styles.wordText}>{word.text}</Text>
+    </Pressable>
+  );
+}
+
 /** Renders one segment: typed text as plain note text; voice as the grey bubble (prd.md > Look and Feel).
  *  Voice states: dots while transcribing, transcript when done, message when the engine failed
  *  (spec.md > Components #3, prd.md > States & Edge Cases). */
-export default function SegmentBubble({ segment, mode, onReplayWord }: Props) {
+export default function SegmentBubble({
+  segment,
+  mode,
+  onReplayWord,
+  onReplayEnd,
+}: Props) {
   if (segment.kind === 'typed') {
     return <Text style={styles.typed}>{segment.text}</Text>;
   }
@@ -56,15 +99,15 @@ export default function SegmentBubble({ segment, mode, onReplayWord }: Props) {
   // View mode only: a plain tap does nothing; long-press a word starts that spot.
   if (mode === 'view' && segment.kind === 'voice' && segment.words) {
     return (
-      <View style={styles.voice}>
+      <View style={[styles.voice, styles.voiceWords]}>
         {segment.words.map((word, index) => (
-          <Pressable
+          <VoiceWord
             key={`${segment.id}-${index}`}
-            onPress={() => {}}
-            onLongPress={() => onReplayWord?.(segment, word.startMs)}
-          >
-            <Text style={styles.word}>{word.text} </Text>
-          </Pressable>
+            segment={segment}
+            word={word}
+            onReplayWord={onReplayWord}
+            onReplayEnd={onReplayEnd}
+          />
         ))}
       </View>
     );
@@ -98,11 +141,19 @@ const styles = StyleSheet.create({
     maxWidth: '92%',
   },
   word: {
+    marginRight: 6,
+    paddingVertical: 4,
+  },
+  wordText: {
     color: '#d8d8d8',
     fontSize: 17,
     lineHeight: 26,
-    paddingVertical: 4,
-    marginRight: 6,
+  },
+  /** Words flow as normal wrapped text lines, not one block per word. */
+  voiceWords: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
   },
   voiceText: {
     color: '#d8d8d8',
