@@ -23,7 +23,8 @@ function titleOf(note: Note): string {
 }
 
 /** Homepage: square tiles, newest first. The title line is tappable for an
- *  inline rename; the rest of the tile opens the note. */
+ *  inline rename; the rest of the tile opens the note. A search box filters
+ *  by title AND content; a toggle sorts by date or alphabetically. */
 export default function HomeScreen({
   notes,
   onOpenNote,
@@ -33,6 +34,8 @@ export default function HomeScreen({
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'alpha'>('date');
 
   const confirmDelete = (note: Note) => {
     Alert.alert('Delete note?', `${titleOf(note)} — ${preview(note)}`, [
@@ -52,7 +55,20 @@ export default function HomeScreen({
     setDraftTitle('');
   };
 
-  const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
+  // Search matches the title or ANY block's text (case-insensitive);
+  // then sort by date (newest first) or alphabetically by title.
+  const q = query.trim().toLowerCase();
+  const visible = notes
+    .filter((note) => {
+      if (q === '') return true;
+      if (titleOf(note).toLowerCase().includes(q)) return true;
+      return note.segments.some((segment) => segment.text.toLowerCase().includes(q));
+    })
+    .sort((a, b) =>
+      sortBy === 'date'
+        ? b.updatedAt - a.updatedAt
+        : titleOf(a).localeCompare(titleOf(b), undefined, { sensitivity: 'base' }),
+    );
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -60,12 +76,44 @@ export default function HomeScreen({
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>Notes</Text>
-        {sorted.length === 0 ? (
-          <Text style={styles.empty}>No notes yet — start one below.</Text>
+
+        <View style={styles.controls}>
+          <TextInput
+            style={styles.search}
+            placeholder="Search title or content…"
+            placeholderTextColor="#666"
+            value={query}
+            onChangeText={setQuery}
+            autoCorrect={false}
+          />
+          <View style={styles.sortGroup}>
+            <Pressable
+              style={[styles.sortButton, sortBy === 'date' && styles.sortButtonActive]}
+              onPress={() => setSortBy('date')}
+            >
+              <Text style={[styles.sortText, sortBy === 'date' && styles.sortTextActive]}>
+                Date
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.sortButton, sortBy === 'alpha' && styles.sortButtonActive]}
+              onPress={() => setSortBy('alpha')}
+            >
+              <Text style={[styles.sortText, sortBy === 'alpha' && styles.sortTextActive]}>
+                A–Z
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {visible.length === 0 ? (
+          <Text style={styles.empty}>
+            {notes.length === 0 ? 'No notes yet — start one below.' : 'No notes match.'}
+          </Text>
         ) : null}
 
         <View style={styles.grid}>
-          {sorted.map((note) => {
+          {visible.map((note) => {
             const editing = editingId === note.id;
             return (
               <View key={note.id} style={styles.tile}>
@@ -141,6 +189,46 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 15,
     marginBottom: 16,
+  },
+  controls: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  search: {
+    flex: 1,
+    borderColor: '#2a2a2a',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    color: '#e8e8e8',
+    fontSize: 14,
+    backgroundColor: '#0d0d0d',
+  },
+  sortGroup: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    overflow: 'hidden',
+  },
+  sortButton: {
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    backgroundColor: '#0d0d0d',
+  },
+  sortButtonActive: {
+    backgroundColor: '#262626',
+  },
+  sortText: {
+    color: '#777',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sortTextActive: {
+    color: '#fff',
   },
   grid: {
     flexDirection: 'row',
