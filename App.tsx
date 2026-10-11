@@ -1,18 +1,20 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 
+import HomeScreen from './src/screens/HomeScreen';
 import NoteScreen from './src/screens/NoteScreen';
 import type { NoteMode } from './src/components/ModeToggle';
 import { getMetering, meteringToLive, startRecording, stopRecording } from './src/features/recorder';
 import { transcribe } from './src/features/transcription/transcri';
 import type { VoiceSegment } from './src/features/segments';
-import { startSeek } from './src/features/player';
-import { loadNote, saveNote } from './src/features/noteStore';
+import { startSeek, stop as stopPlayer } from './src/features/player';
+import { loadNotes, saveNotes } from './src/features/noteStore';
 import {
   addTypedSegment,
   addVoiceSegment,
   editSegmentText,
   emptyNote,
+  newNoteId,
   newSegmentId,
   removeSegment,
   setVoiceTranscript,
@@ -21,10 +23,12 @@ import {
 
 const NOTICE_MS = 3500;
 
-/** Root: owns the note and the mode; saves to disk from slice 4 on.
- *  Slice 2 owns the record → transcribe flow (prd.md > Capture, Transcription). */
+/** Root (homepage branch): owns the notes list and which note is open; the
+ *  home page is first, "+ New note" starts a fresh editor. Slice 2 owns the
+ *  record → transcribe flow (prd.md > Capture, Transcription). */
 export default function App() {
-  const [note, setNote] = useState<Note>(emptyNote);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
   // PRD: the app opens in edit mode so an empty note shows its blinking cursor.
   const [mode, setMode] = useState<NoteMode>('edit');
   const [recording, setRecording] = useState(false);
@@ -34,15 +38,44 @@ export default function App() {
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Slice 4: saves stay off until the disk load has settled (see the load effect).
   const readyToSave = useRef(false);
+  const [page, setPage] = useState<'home' | 'editor'>('home');
 
-  // Slice 4: restore the note from documents/note.json on launch (spec > Data Flow 7).
-  // The local read resolves in milliseconds; the guard keeps it from clobbering
-  // anything the user does before it lands.
+  const openNote = (id: string) => {
+    stopReplay();
+    setRecording(false);
+    setLive(false);
+    setCurrentNoteId(id);
+    setMode('edit');
+    setPage('editor');
+  };
+
+  const createNote = () => {
+    const fresh = emptyNote(newNoteId());
+    stopReplay();
+    setRecording(false);
+    setLive(false);
+    setNotes((current) => [...current, fresh]);
+    setCurrentNoteId(fresh.id);
+    setMode('edit');
+    setPage('editor');
+  };
+
+  const goHome = () => {
+    stopReplay();
+    setRecording(false);
+    setLive(false);
+    setCurrentNoteId(null);
+    setPage('home');
+  };
+
+  // Multi-note restore on launch (homepage branch): notes.json, with the old
+  // single-note file promoted on first launch. The guard keeps it from
+  // clobbering anything the user does before it lands.
   useEffect(() => {
     let cancelled = false;
-    void loadNote().then((stored) => {
+    void loadNotes().then((stored) => {
       if (cancelled) return;
-      if (stored) setNote(stored);
+      if (stored) setNotes(stored);
       readyToSave.current = true;
     });
     return () => {
@@ -50,11 +83,11 @@ export default function App() {
     };
   }, []);
 
-  // Slice 4: every change is written back to note.json (spec > Data Flow 6, "simple is fine").
+  // Every change is written back to notes.json (spec > Data Flow 6, "simple is fine").
   useEffect(() => {
     if (!readyToSave.current) return;
-    saveNote(note);
-  }, [note]);
+    saveNotes(notes);
+  }, [notes]);
 
   const showNotice = (message: string) => {
     setNotice(message);
@@ -69,23 +102,26 @@ export default function App() {
     return () => clearInterval(timer);
   }, [recording]);
 
-  const runTranscription = async (segmentId: string, audioUri: string) => {
+  const patchNote = (noteId: string, patch: (note: Note) => Note) =>
+    setNotes((current) => current.map((note) => (note.id === noteId ? patch(note) : note)));
+
+  const runTranscription = async (noteId: string, segmentId: string, audioUri: string) => {
     try {
       const { words } = await transcribe(audioUri);
       if (words.length === 0) {
         // Silent take: no segment, short notice (prd.md > Transcription).
-        setNote((current) => removeSegment(current, segmentId));
+        patchNote(noteId, (current) => removeSegment(current, segmentId));
         showNotice('no audio recorded');
       } else {
         const text = words.map((word) => word.text).join(' ');
-        setNote((current) => setVoiceTranscript(current, segmentId, text, words));
+        patchNote(noteId, (current) => setVoiceTranscript(current, segmentId, text, words));
       }
     } catch (err) {
       // Delay ~700 ms so the 1-2-3 dots animation renders once before the message appears.
       await new Promise((resolve) => setTimeout(resolve, 700));
       const reason =
         err instanceof Error ? err.message : 'transcription unavailable';
-      setNote((current) =>
+      patchNote(noteId, (current) =>
         setVoiceTranscript(current, segmentId, reason, null),
       );
     }
@@ -99,7 +135,10 @@ export default function App() {
   // Slice 3: start word-precise playback from a voice segment's word timestamp.
   const startReplay = (segment: VoiceSegment, wordMs: number) => {
     if (replayCleanup.current) replayCleanup.current();
-    const { cleanup, durationMs } = startSeek(segment.audioUri, wordMs, setPlayheadMs, () => {
+    const { cleanup, durationMs } = startSeek(segment.audioUri, wordMs, (ms) => {
+      // Ignore stray position ticks after a stop/replay switch.
+      if (replayCleanup.current) setPlayheadMs(ms);
+    }, () => {
       // Natural end: audio ran out on its own → clear the ring; the player is
       // already released by stop() inside startSeek's poll.
       replayCleanup.current = null;
@@ -111,13 +150,16 @@ export default function App() {
   };
 
   const stopReplay = () => {
-    replayCleanup.current?.();
+    const cleanup = replayCleanup.current;
     replayCleanup.current = null;
     setPlayback(null);
     setPlayheadMs(0);
+    cleanup?.();
   };
 
   const handleRecordPress = async () => {
+    if (!currentNoteId) return;
+    const noteId = currentNoteId;
     if (recording) {
       setRecording(false);
       setLive(false);
@@ -125,8 +167,10 @@ export default function App() {
         const { uri, durationMs } = await stopRecording();
         const segmentId = pendingId.current ?? newSegmentId();
         pendingId.current = null;
-        setNote((current) => addVoiceSegment(current, { id: segmentId, audioUri: uri, durationMs }));
-        void runTranscription(segmentId, uri);
+        patchNote(noteId, (current) =>
+          addVoiceSegment(current, { id: segmentId, audioUri: uri, durationMs }),
+        );
+        void runTranscription(noteId, segmentId, uri);
       } catch {
         showNotice('no audio recorded');
       }
@@ -144,24 +188,35 @@ export default function App() {
     }
   };
 
+  const currentNote = notes.find((note) => note.id === currentNoteId) ?? null;
+
   return (
     <>
       <StatusBar style="light" />
-      <NoteScreen
-        note={note}
-        mode={mode}
-        onModeChange={setMode}
-        onAddTypedSegment={(text) => setNote((current) => addTypedSegment(current, text))}
-        onEditText={(id, text) => setNote((current) => editSegmentText(current, id, text))}
-        onRecordPress={handleRecordPress}
-        recording={recording}
-        live={recording && live}
-        notice={notice}
-        playback={playback}
-        playheadMs={playheadMs}
-        onStartReplay={startReplay}
-        onStopReplay={stopReplay}
-      />
+      {page === 'home' || !currentNote ? (
+        <HomeScreen notes={notes} onOpenNote={openNote} onNewNote={createNote} />
+      ) : (
+        <NoteScreen
+          note={currentNote}
+          mode={mode}
+          onModeChange={setMode}
+          onHome={goHome}
+          onAddTypedSegment={(text) =>
+            patchNote(currentNote.id, (current) => addTypedSegment(current, text))
+          }
+          onEditText={(id, text) =>
+            patchNote(currentNote.id, (current) => editSegmentText(current, id, text))
+          }
+          onRecordPress={handleRecordPress}
+          recording={recording}
+          live={recording && live}
+          notice={notice}
+          playback={playback}
+          playheadMs={playheadMs}
+          onStartReplay={startReplay}
+          onStopReplay={stopReplay}
+        />
+      )}
     </>
   );
 }

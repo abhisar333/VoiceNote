@@ -1,46 +1,90 @@
 import { File, Paths } from 'expo-file-system';
 
 import type { Note, Segment } from './segments';
+import { newNoteId } from './segments';
 
-/** Persistence for the whole note (spec.md > Components #10): one documents/note.json,
- *  plain UTF-8 JSON. Audio stays beside it in documents/recordings/ — only the path is
- *  stored (spec.md > Data Model). Implements prd.md > States & Edge Cases:
- *  "App restarted / force-quit → everything restored". */
+/** Persistence for the notes list (homepage branch): one documents/notes.json,
+ *  plain UTF-8 JSON. Audio stays beside it in documents/recordings/ — only the
+ *  path is stored (spec.md > Data Model). Implements prd.md > States & Edge
+ *  Cases: "App restarted / force-quit → everything restored". */
 
 const NOTE_FILE = 'note.json';
+const NOTES_FILE = 'notes.json';
 
-function noteFile(): File {
+function notesFile(): File {
+  return new File(Paths.document, NOTES_FILE);
+}
+
+function legacyNoteFile(): File {
   return new File(Paths.document, NOTE_FILE);
 }
 
-/** Restore the note from disk, or null when there is nothing (or nothing usable) to restore. */
-export async function loadNote(): Promise<Note | null> {
+/** Restore the notes list from disk, or null when there is nothing (or nothing
+ *  usable) to restore. The pre-homepage single-note file is promoted on first
+ *  launch so existing users keep their note. */
+export async function loadNotes(): Promise<Note[] | null> {
   try {
-    const file = noteFile();
-    if (!file.exists) return null;
-    const parsed = JSON.parse(await file.text()) as Partial<Note>;
-    if (!parsed || !Array.isArray(parsed.segments)) return null;
-    // Only restore voice segments whose audio file still exists on disk.
-    const segments = parsed.segments.filter((segment) => segmentExists(segment));
-    return {
-      segments: segments as Segment[],
-      updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
-    };
+    const file = notesFile();
+    if (file.exists) {
+      const parsed = JSON.parse(await file.text()) as Partial<{ notes: unknown }>;
+      const list = Array.isArray(parsed?.notes) ? parsed.notes : [];
+      const restored = list
+        .map((candidate) => restoreNote(candidate))
+        .filter((note): note is Note => note !== null);
+      return restored;
+    }
+    // First launch after the homepage change: promote the old single note.
+    const legacy = await loadLegacyNote();
+    return legacy ? [legacy] : null;
   } catch {
     return null; // Unreadable/corrupt file → start fresh rather than crash (POC call).
   }
 }
 
-/** Write the note to disk. Voice segments whose audio is gone are dropped, so the
- *  saved document never points at a file that no longer exists (spec > Components #10). */
-export function saveNote(note: Note): void {
+/** Write the notes list to disk. Voice segments whose audio is gone are
+ *  dropped, so the saved document never points at a file that no longer
+ *  exists (spec > Components #10). */
+export function saveNotes(notes: Note[]): void {
   try {
-    const file = noteFile();
+    const file = notesFile();
     if (!file.exists) file.create();
-    const segments = note.segments.filter((segment) => segmentExists(segment));
-    file.write(JSON.stringify({ segments, updatedAt: note.updatedAt }, null, 2));
+    const cleaned = notes.map((note) => ({
+      ...note,
+      segments: note.segments.filter((segment) => segmentExists(segment)),
+    }));
+    file.write(JSON.stringify({ notes: cleaned }, null, 2));
   } catch {
-    // A failed save never breaks the running app; the in-memory note stays source of truth.
+    // A failed save never breaks the running app; the in-memory list stays source of truth.
+  }
+}
+
+function restoreNote(candidate: unknown): Note | null {
+  const note = candidate as Partial<Note> | null;
+  if (!note || !Array.isArray(note.segments)) return null;
+  // Only restore voice segments whose audio file still exists on disk.
+  const segments = note.segments.filter((segment) => segmentExists(segment));
+  return {
+    id: typeof note.id === 'string' ? note.id : newNoteId(),
+    segments: segments as Segment[],
+    updatedAt: typeof note.updatedAt === 'number' ? note.updatedAt : Date.now(),
+  };
+}
+
+/** The single-note layout that predates the homepage: { segments, updatedAt }. */
+async function loadLegacyNote(): Promise<Note | null> {
+  try {
+    const file = legacyNoteFile();
+    if (!file.exists) return null;
+    const parsed = JSON.parse(await file.text()) as Partial<Note>;
+    if (!parsed || !Array.isArray(parsed.segments)) return null;
+    const segments = parsed.segments.filter((segment) => segmentExists(segment));
+    return {
+      id: newNoteId(),
+      segments: segments as Segment[],
+      updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
+    };
+  } catch {
+    return null;
   }
 }
 

@@ -19,6 +19,7 @@ type Props = {
   mode: NoteMode;
   onModeChange: (mode: NoteMode) => void;
   onAddTypedSegment: (text: string) => void;
+  onHome: () => void;
   onRecordPress: () => void;
   /** True between the first tap and the second (stop). */
   recording: boolean;
@@ -45,6 +46,7 @@ export default function NoteScreen({
   mode,
   onModeChange,
   onAddTypedSegment,
+  onHome,
   onRecordPress,
   recording,
   live,
@@ -95,6 +97,9 @@ export default function NoteScreen({
             />
           ) : null}
         </View>
+        <Pressable style={styles.homeButton} onPress={onHome}>
+          <Text style={styles.homeText}>← Home</Text>
+        </Pressable>
         <ModeToggle mode={mode} onChange={handleModeChange} />
       </View>
 
@@ -167,6 +172,17 @@ const styles = StyleSheet.create({
   ringSlot: {
     width: 44,
     height: 44,
+  },
+  homeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#1c1c1c',
+  },
+  homeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   list: {
     flex: 1,
