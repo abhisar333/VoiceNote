@@ -1,5 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -64,6 +65,8 @@ export default function NoteScreen({
   onDraftChange,
 }: Props) {
   const composerRef = useRef<TextInput>(null);
+  // Tap empty space: keyboard open → dismiss it; closed → start a new line.
+  const [composerFocused, setComposerFocused] = useState(false);
   const isEdit = mode === 'edit';
   const isEmpty = note.segments.length === 0;
 
@@ -125,7 +128,14 @@ export default function NoteScreen({
         {isEdit ? (
           <Pressable
             style={styles.emptyArea}
-            onPress={() => composerRef.current?.focus()}
+            onPress={() => {
+              if (composerFocused || draft !== '') {
+                composerRef.current?.blur();
+                Keyboard.dismiss();
+              } else {
+                composerRef.current?.focus();
+              }
+            }}
           >
             <TextInput
               ref={composerRef}
@@ -136,6 +146,8 @@ export default function NoteScreen({
               autoFocus={isEmpty}
               value={draft}
               onChangeText={onDraftChange}
+              onFocus={() => setComposerFocused(true)}
+              onBlur={() => setComposerFocused(false)}
               // Enter inserts a newline inside the same block (learner decision);
               // the block commits on blur, on record press, and on mode switch.
               onEndEditing={commitDraft}
