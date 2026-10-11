@@ -88,6 +88,22 @@ async function loadLegacyNote(): Promise<Note | null> {
   }
 }
 
+/** Delete every audio file a note's voice segments point at. Called when the
+ *  note itself is deleted so the recordings folder never keeps orphaned
+ *  takes (spec > Data Model: audio lives in documents/recordings/). Missing
+ *  files are ignored — deletion is best-effort by design. */
+export function deleteNoteAudio(note: Note): void {
+  for (const segment of note.segments) {
+    if (segment.kind !== 'voice') continue;
+    try {
+      const file = new File(segment.audioUri);
+      if (file.exists) file.delete();
+    } catch {
+      // A file we can't remove just stays on disk; never block the delete.
+    }
+  }
+}
+
 function segmentExists(segment: unknown): boolean {
   const candidate = segment as Partial<Segment>;
   if (!candidate || typeof candidate.kind !== 'string') return false;

@@ -8,7 +8,7 @@ import { getMetering, meteringToLive, startRecording, stopRecording } from './sr
 import { transcribe } from './src/features/transcription/transcri';
 import type { VoiceSegment } from './src/features/segments';
 import { startSeek, stop as stopPlayer } from './src/features/player';
-import { loadNotes, saveNotes } from './src/features/noteStore';
+import { loadNotes, saveNotes, deleteNoteAudio } from './src/features/noteStore';
 import {
   addTypedSegment,
   addVoiceSegment,
@@ -66,6 +66,22 @@ export default function App() {
     setLive(false);
     setCurrentNoteId(null);
     setPage('home');
+  };
+
+  // Delete a note from the home list: drop it from state (the save effect
+  // rewrites notes.json) and remove its recorded audio from disk first.
+  const deleteNote = (id: string) => {
+    const note = notes.find((candidate) => candidate.id === id);
+    if (!note) return;
+    stopReplay();
+    setRecording(false);
+    setLive(false);
+    deleteNoteAudio(note);
+    setNotes((current) => current.filter((candidate) => candidate.id !== id));
+    if (currentNoteId === id) {
+      setCurrentNoteId(null);
+      setPage('home');
+    }
   };
 
   // Multi-note restore on launch (homepage branch): notes.json, with the old
@@ -194,7 +210,12 @@ export default function App() {
     <>
       <StatusBar style="light" />
       {page === 'home' || !currentNote ? (
-        <HomeScreen notes={notes} onOpenNote={openNote} onNewNote={createNote} />
+        <HomeScreen
+          notes={notes}
+          onOpenNote={openNote}
+          onNewNote={createNote}
+          onDeleteNote={deleteNote}
+        />
       ) : (
         <NoteScreen
           note={currentNote}

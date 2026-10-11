@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Note } from '../features/segments';
 
@@ -6,6 +6,7 @@ type Props = {
   notes: Note[];
   onOpenNote: (id: string) => void;
   onNewNote: () => void;
+  onDeleteNote: (id: string) => void;
 };
 
 function preview(note: Note): string {
@@ -14,7 +15,14 @@ function preview(note: Note): string {
 }
 
 /** Homepage (feature branch): the list of notes the app opens on. */
-export default function HomeScreen({ notes, onOpenNote, onNewNote }: Props) {
+export default function HomeScreen({ notes, onOpenNote, onNewNote, onDeleteNote }: Props) {
+  const confirmDelete = (note: Note) => {
+    Alert.alert('Delete note?', preview(note), [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => onDeleteNote(note.id) },
+    ]);
+  };
+
   const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
   return (
     <View style={styles.screen}>
@@ -24,13 +32,22 @@ export default function HomeScreen({ notes, onOpenNote, onNewNote }: Props) {
       ) : (
         sorted.map((note) => (
           <Pressable key={note.id} style={styles.row} onPress={() => onOpenNote(note.id)}>
-            <Text style={styles.rowText} numberOfLines={1}>
-              {preview(note)}
-            </Text>
-            <Text style={styles.rowMeta}>
-              {note.segments.length} {note.segments.length === 1 ? 'block' : 'blocks'} ·{' '}
-              {new Date(note.updatedAt).toLocaleDateString()}
-            </Text>
+            <View style={styles.rowMain}>
+              <Text style={styles.rowText} numberOfLines={1}>
+                {preview(note)}
+              </Text>
+              <Text style={styles.rowMeta}>
+                {note.segments.length} {note.segments.length === 1 ? 'block' : 'blocks'} ·{' '}
+                {new Date(note.updatedAt).toLocaleDateString()}
+              </Text>
+            </View>
+            <Pressable
+              style={styles.deleteButton}
+              hitSlop={8}
+              onPress={() => confirmDelete(note)}
+            >
+              <Text style={styles.deleteText}>Delete</Text>
+            </Pressable>
           </Pressable>
         ))
       )}
@@ -66,6 +83,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  rowMain: {
+    flex: 1,
+  },
+  deleteButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4a2a2a',
+    backgroundColor: '#1c1010',
+  },
+  deleteText: {
+    color: '#e07070',
+    fontSize: 13,
+    fontWeight: '600',
   },
   rowText: {
     color: '#e8e8e8',
