@@ -14,7 +14,7 @@ export type VoiceSegment = {
 
 export type Segment = TypedSegment | VoiceSegment;
 
-export type Note = { id: string; segments: Segment[]; updatedAt: number };
+export type Note = { id: string; segments: Segment[]; updatedAt: number; /** Live composer text, saved with the note so typing survives force-quit. */ draft?: string };
 
 let idCounter = 0;
 let noteCounter = 0;
@@ -37,9 +37,19 @@ export function emptyNote(id: string = newNoteId()): Note {
 
 export function addTypedSegment(note: Note, text: string): Note {
   const trimmed = text.trim();
-  if (trimmed === '') return note;
+  if (trimmed === '') {
+    // Nothing to add — but the draft still needs clearing on commit.
+    return note.draft ? { ...note, draft: undefined } : note;
+  }
   const segment: TypedSegment = { id: newSegmentId(), kind: 'typed', text: trimmed };
-  return { ...note, segments: [...note.segments, segment], updatedAt: Date.now() };
+  return { ...note, segments: [...note.segments, segment], draft: undefined, updatedAt: Date.now() };
+}
+
+/** Mirror the composer into the note on every keystroke (autosave parity with
+ *  audio, which is written the moment recording stops). Does not bump
+ *  updatedAt: a draft alone doesn't reorder the home list. */
+export function setNoteDraft(note: Note, text: string): Note {
+  return { ...note, draft: text };
 }
 
 /** Append a voice segment straight after stop, while it still shows the 1-2-3 dots. */

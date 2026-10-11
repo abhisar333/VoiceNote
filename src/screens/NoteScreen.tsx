@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -37,6 +37,10 @@ type Props = {
   onStopReplay: () => void;
   /** Slice 4: permanent in-place edit of a segment's text (prd.md > Modes). */
   onEditText: (id: string, text: string) => void;
+  /** Autosaved composer text — lives on the note, not local state, so typing
+   *  survives force-quit exactly like recorded audio does. */
+  draft: string;
+  onDraftChange: (text: string) => void;
 };
 
 /** The one screen: ring slot (top-left) · toggle (top-right) · segments · record button (bottom-right).
@@ -56,18 +60,17 @@ export default function NoteScreen({
   onStartReplay,
   onStopReplay,
   onEditText,
+  draft,
+  onDraftChange,
 }: Props) {
   const composerRef = useRef<TextInput>(null);
-  // The draft lives in state, not only inside the TextInput: view mode unmounts the
-  // composer, so anything still typed would otherwise vanish with it.
-  const [draft, setDraft] = useState('');
   const isEdit = mode === 'edit';
   const isEmpty = note.segments.length === 0;
 
   const commitDraft = () => {
     const trimmed = draft.trim();
     if (trimmed !== '') onAddTypedSegment(trimmed);
-    setDraft('');
+    else onDraftChange('');
   };
 
   // Leaving edit mode commits the in-progress block instead of losing it.
@@ -132,7 +135,7 @@ export default function NoteScreen({
               multiline
               autoFocus={isEmpty}
               value={draft}
-              onChangeText={setDraft}
+              onChangeText={onDraftChange}
               // Enter inserts a newline inside the same block (learner decision);
               // the block commits on blur, on record press, and on mode switch.
               onEndEditing={commitDraft}

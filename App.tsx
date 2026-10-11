@@ -17,6 +17,7 @@ import {
   newNoteId,
   newSegmentId,
   removeSegment,
+  setNoteDraft,
   setVoiceTranscript,
   type Note,
 } from './src/features/segments';
@@ -224,6 +225,10 @@ export default function App() {
           onHome={goHome}
           onAddTypedSegment={(text) =>
             patchNote(currentNote.id, (current) => addTypedSegment(current, text))
+          }
+          draft={currentNote.draft ?? ''}
+          onDraftChange={(text) =>
+            patchNote(currentNote.id, (current) => setNoteDraft(current, text))
           }
           onEditText={(id, text) =>
             patchNote(currentNote.id, (current) => editSegmentText(current, id, text))

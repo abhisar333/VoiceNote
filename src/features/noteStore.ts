@@ -67,6 +67,7 @@ function restoreNote(candidate: unknown): Note | null {
     id: typeof note.id === 'string' ? note.id : newNoteId(),
     segments: segments as Segment[],
     updatedAt: typeof note.updatedAt === 'number' ? note.updatedAt : Date.now(),
+    draft: typeof note.draft === 'string' ? note.draft : undefined,
   };
 }
 
