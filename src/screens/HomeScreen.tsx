@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
 
 import type { Note } from '../features/segments';
@@ -55,61 +55,67 @@ export default function HomeScreen({
   const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Notes</Text>
-      {sorted.length === 0 ? (
-        <Text style={styles.empty}>No notes yet — start one below.</Text>
-      ) : null}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Notes</Text>
+        {sorted.length === 0 ? (
+          <Text style={styles.empty}>No notes yet — start one below.</Text>
+        ) : null}
 
-      <View style={styles.grid}>
-        {sorted.map((note) => {
-          const editing = editingId === note.id;
-          return (
-            <View key={note.id} style={styles.tile}>
-              {editing ? (
-                <TextInput
-                  style={styles.tileTitleInput}
-                  placeholder="Title"
-                  placeholderTextColor="#555"
-                  value={draftTitle}
-                  autoFocus
-                  onChangeText={setDraftTitle}
-                  onBlur={() => commitRename(note.id)}
-                  onSubmitEditing={() => commitRename(note.id)}
-                  returnKeyType="done"
-                />
-              ) : (
-                // Tapping the title renames instead of opening the note.
-                <Pressable hitSlop={4} onPress={() => startRename(note)}>
-                  <Text style={styles.tileTitle} numberOfLines={1}>
-                    {titleOf(note)}
+        <View style={styles.grid}>
+          {sorted.map((note) => {
+            const editing = editingId === note.id;
+            return (
+              <View key={note.id} style={styles.tile}>
+                {editing ? (
+                  <TextInput
+                    style={styles.tileTitleInput}
+                    placeholder="Title"
+                    placeholderTextColor="#555"
+                    value={draftTitle}
+                    autoFocus
+                    onChangeText={setDraftTitle}
+                    onBlur={() => commitRename(note.id)}
+                    onSubmitEditing={() => commitRename(note.id)}
+                    returnKeyType="done"
+                  />
+                ) : (
+                  // Tapping the title renames instead of opening the note.
+                  <Pressable hitSlop={4} onPress={() => startRename(note)}>
+                    <Text style={styles.tileTitle} numberOfLines={1}>
+                      {titleOf(note)}
+                    </Text>
+                  </Pressable>
+                )}
+
+                <Pressable style={styles.tileBody} onPress={() => onOpenNote(note.id)}>
+                  <Text style={styles.tileText} numberOfLines={4}>
+                    {preview(note)}
+                  </Text>
+                  <Text style={styles.tileMeta}>
+                    {note.segments.length} {note.segments.length === 1 ? 'block' : 'blocks'} ·{' '}
+                    {new Date(note.updatedAt).toLocaleDateString()}
                   </Text>
                 </Pressable>
-              )}
 
-              <Pressable style={styles.tileBody} onPress={() => onOpenNote(note.id)}>
-                <Text style={styles.tileText} numberOfLines={4}>
-                  {preview(note)}
-                </Text>
-                <Text style={styles.tileMeta}>
-                  {note.segments.length} {note.segments.length === 1 ? 'block' : 'blocks'} ·{' '}
-                  {new Date(note.updatedAt).toLocaleDateString()}
-                </Text>
-              </Pressable>
+                <Pressable
+                  style={styles.deleteButton}
+                  hitSlop={6}
+                  onPress={() => confirmDelete(note)}
+                >
+                  <Text style={styles.deleteText}>Delete</Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
 
-              <Pressable
-                style={styles.deleteButton}
-                hitSlop={6}
-                onPress={() => confirmDelete(note)}
-              >
-                <Text style={styles.deleteText}>Delete</Text>
-              </Pressable>
-            </View>
-          );
-        })}
-      </View>
-
-      <Pressable style={styles.newButton} onPress={onNewNote}>
-        <Text style={styles.newButtonText}>+ New note</Text>
+      {/* Red round "+" FAB, bottom-right — mirrors the round record button. */}
+      <Pressable style={styles.fab} onPress={onNewNote} accessibilityLabel="New note">
+        <Text style={styles.fabPlus}>+</Text>
       </Pressable>
     </View>
   );
@@ -119,8 +125,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  scrollContent: {
     paddingHorizontal: 18,
     paddingTop: 64,
+    paddingBottom: 130,
   },
   title: {
     color: '#fff',
@@ -190,16 +199,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  newButton: {
-    backgroundColor: '#1c1c1c',
-    borderRadius: 12,
-    paddingVertical: 14,
+  fab: {
+    position: 'absolute',
+    right: 24,
+    bottom: 36,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#e03535',
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
+    // Same soft glow family as the round record button on the editor screen.
+    shadowColor: '#e03535',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
-  newButtonText: {
+  fabPlus: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 32,
     fontWeight: '600',
+    lineHeight: 36,
   },
 });
