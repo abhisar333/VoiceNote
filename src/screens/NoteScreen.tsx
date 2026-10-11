@@ -74,8 +74,25 @@ export default function NoteScreen({
   const composerRef = useRef<TextInput>(null);
   // Tap empty space: keyboard open → dismiss it; closed → start a new line.
   const [composerFocused, setComposerFocused] = useState(false);
+  // Cross-block backspace: focus the block above after the current one empties.
+  const [editRequest, setEditRequest] = useState<{ id: string; token: number } | null>(null);
+  const requestToken = useRef(0);
   const isEdit = mode === 'edit';
   const isEmpty = note.segments.length === 0;
+
+  // A typed block was backspaced to '' — delete it, then open the editor on
+  // the typed block directly above (with the caret at its end) so holding
+  // backspace keeps deleting through the note. A voice block above stops the
+  // chain: its text is the recording's captions, not deletable prose.
+  const handleEmptied = (id: string) => {
+    onEditText(id, '');
+    const index = note.segments.findIndex((segment) => segment.id === id);
+    const above = index > 0 ? note.segments[index - 1] : undefined;
+    if (above && above.kind === 'typed') {
+      requestToken.current += 1;
+      setEditRequest({ id: above.id, token: requestToken.current });
+    }
+  };
 
   const commitDraft = () => {
     const trimmed = draft.trim();
@@ -131,6 +148,9 @@ export default function NoteScreen({
             onEditText={onEditText}
             onRetranscribe={onRetranscribe}
             onRemove={onRemoveSegment}
+            editRequest={editRequest}
+            onEditRequestHandled={() => setEditRequest(null)}
+            onEmptied={handleEmptied}
           />
         ))}
 

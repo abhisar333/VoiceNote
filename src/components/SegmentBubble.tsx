@@ -20,6 +20,14 @@ type Props = {
   /** Remove this voice bubble from the note (edit mode only); the caller also
    *  deletes its audio file. Typed lines have no delete — not needed. */
   onRemove?: (segment: Segment) => void;
+  /** NoteScreen-driven focus request: open this segment's editor when id matches.
+   *  token dedupes re-consumption (a remounted bubble must not reopen an old request). */
+  editRequest?: { id: string; token: number } | null;
+  /** Tell NoteScreen the request was consumed so it can be cleared. */
+  onEditRequestHandled?: () => void;
+  /** A typed editor's text hit '' — NoteScreen deletes the block and opens the
+   *  one above, so continued backspace keeps deleting across blocks. */
+  onEmptied?: (id: string) => void;
 };
 
 /** The 1-2-3 dots while the finished recording is with the transcriber (prd.md > Transcription). */
@@ -100,11 +108,31 @@ export default function SegmentBubble({
   onEditText,
   onRetranscribe,
   onRemove,
+  editRequest,
+  onEditRequestHandled,
+  onEmptied,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  // Forced caret position, applied once when a chained editor opens (the block
+  // above must start at its END so the next backspace deletes its last char).
+  // Cleared on the first keystroke/selection change → back to normal cursor.
+  const [caret, setCaret] = useState<{ start: number; end: number } | null>(null);
   const [pickingLanguage, setPickingLanguage] = useState(false);
   const prevMode = useRef(mode);
+  const lastRequestToken = useRef(0);
+
+  // Chained-backspace focus: NoteScreen asks this segment to open its editor.
+  useEffect(() => {
+    if (!editRequest || editRequest.id !== segment.id) return;
+    if (editRequest.token === lastRequestToken.current) return;
+    lastRequestToken.current = editRequest.token;
+    onEditRequestHandled?.();
+    if (mode !== 'edit') return;
+    setDraft(segment.text);
+    setCaret({ start: segment.text.length, end: segment.text.length });
+    setEditing(true);
+  }, [editRequest, segment.id, segment.text, mode, onEditRequestHandled]);
 
   // Delete one voice bubble with confirmation — recordings must be removable
   // without deleting the whole note. Audio goes with it.
@@ -135,13 +163,23 @@ export default function SegmentBubble({
     prevMode.current = mode;
   }, [mode, editing]);
 
+  // Typed text reached '' mid-backspace → chain: delete this block and open
+  // the editor on the block above (NoteScreen decides where focus goes).
+  const handleChangeText = (value: string) => {
+    setDraft(value);
+    setCaret(null);
+    if (value === '' && segment.kind === 'typed') onEmptied?.(segment.id);
+  };
+
   // In-place editor (prd.md > Modes: "Tap any segment's text to edit it in place").
   if (editing) {
     const input = (
       <TextInput
         style={[segment.kind === 'typed' ? styles.typed : styles.voiceText, styles.editor]}
         value={draft}
-        onChangeText={setDraft}
+        onChangeText={handleChangeText}
+        selection={caret ?? undefined}
+        onSelectionChange={() => setCaret(null)}
         autoFocus
         multiline
         onBlur={commitEdit}
