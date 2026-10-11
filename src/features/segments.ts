@@ -14,7 +14,15 @@ export type VoiceSegment = {
 
 export type Segment = TypedSegment | VoiceSegment;
 
-export type Note = { id: string; segments: Segment[]; updatedAt: number; /** Live composer text, saved with the note so typing survives force-quit. */ draft?: string };
+export type Note = {
+  id: string;
+  segments: Segment[];
+  updatedAt: number;
+  /** Homepage tiles: user-set name; empty/undefined renders as "No title". */
+  title?: string;
+  /** Live composer text, saved with the note so typing survives force-quit. */
+  draft?: string;
+};
 
 let idCounter = 0;
 let noteCounter = 0;
@@ -50,6 +58,13 @@ export function addTypedSegment(note: Note, text: string): Note {
  *  updatedAt: a draft alone doesn't reorder the home list. */
 export function setNoteDraft(note: Note, text: string): Note {
   return { ...note, draft: text };
+}
+
+/** Rename a note from the homepage tile. An empty/whitespace name falls back
+ *  to the default label ("No title"). Bumps updatedAt like real content edits. */
+export function setNoteTitle(note: Note, text: string): Note {
+  const trimmed = text.trim();
+  return { ...note, title: trimmed === '' ? undefined : trimmed, updatedAt: Date.now() };
 }
 
 /** Append a voice segment straight after stop, while it still shows the 1-2-3 dots. */

@@ -18,6 +18,7 @@ import {
   newSegmentId,
   removeSegment,
   setNoteDraft,
+  setNoteTitle,
   setVoiceTranscript,
   type Note,
 } from './src/features/segments';
@@ -216,6 +217,9 @@ export default function App() {
           onOpenNote={openNote}
           onNewNote={createNote}
           onDeleteNote={deleteNote}
+          onRenameNote={(id, title) =>
+            patchNote(id, (current) => setNoteTitle(current, title))
+          }
         />
       ) : (
         <NoteScreen

@@ -1,4 +1,5 @@
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
 
 import type { Note } from '../features/segments';
 
@@ -7,6 +8,8 @@ type Props = {
   onOpenNote: (id: string) => void;
   onNewNote: () => void;
   onDeleteNote: (id: string) => void;
+  /** Rename from the tile: tap the title text, type, blur/return to commit. */
+  onRenameNote: (id: string, title: string) => void;
 };
 
 function preview(note: Note): string {
@@ -14,13 +17,39 @@ function preview(note: Note): string {
   return first ?? '(empty note)';
 }
 
-/** Homepage (feature branch): the list of notes the app opens on. */
-export default function HomeScreen({ notes, onOpenNote, onNewNote, onDeleteNote }: Props) {
+function titleOf(note: Note): string {
+  const title = note.title?.trim();
+  return title ? title : 'No title';
+}
+
+/** Homepage: square tiles, newest first. The title line is tappable for an
+ *  inline rename; the rest of the tile opens the note. */
+export default function HomeScreen({
+  notes,
+  onOpenNote,
+  onNewNote,
+  onDeleteNote,
+  onRenameNote,
+}: Props) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState('');
+
   const confirmDelete = (note: Note) => {
-    Alert.alert('Delete note?', preview(note), [
+    Alert.alert('Delete note?', `${titleOf(note)} — ${preview(note)}`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => onDeleteNote(note.id) },
     ]);
+  };
+
+  const startRename = (note: Note) => {
+    setEditingId(note.id);
+    setDraftTitle(note.title ?? '');
+  };
+
+  const commitRename = (id: string) => {
+    onRenameNote(id, draftTitle);
+    setEditingId(null);
+    setDraftTitle('');
   };
 
   const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -29,28 +58,56 @@ export default function HomeScreen({ notes, onOpenNote, onNewNote, onDeleteNote 
       <Text style={styles.title}>Notes</Text>
       {sorted.length === 0 ? (
         <Text style={styles.empty}>No notes yet — start one below.</Text>
-      ) : (
-        sorted.map((note) => (
-          <Pressable key={note.id} style={styles.row} onPress={() => onOpenNote(note.id)}>
-            <View style={styles.rowMain}>
-              <Text style={styles.rowText} numberOfLines={1}>
-                {preview(note)}
-              </Text>
-              <Text style={styles.rowMeta}>
-                {note.segments.length} {note.segments.length === 1 ? 'block' : 'blocks'} ·{' '}
-                {new Date(note.updatedAt).toLocaleDateString()}
-              </Text>
+      ) : null}
+
+      <View style={styles.grid}>
+        {sorted.map((note) => {
+          const editing = editingId === note.id;
+          return (
+            <View key={note.id} style={styles.tile}>
+              {editing ? (
+                <TextInput
+                  style={styles.tileTitleInput}
+                  placeholder="Title"
+                  placeholderTextColor="#555"
+                  value={draftTitle}
+                  autoFocus
+                  onChangeText={setDraftTitle}
+                  onBlur={() => commitRename(note.id)}
+                  onSubmitEditing={() => commitRename(note.id)}
+                  returnKeyType="done"
+                />
+              ) : (
+                // Tapping the title renames instead of opening the note.
+                <Pressable hitSlop={4} onPress={() => startRename(note)}>
+                  <Text style={styles.tileTitle} numberOfLines={1}>
+                    {titleOf(note)}
+                  </Text>
+                </Pressable>
+              )}
+
+              <Pressable style={styles.tileBody} onPress={() => onOpenNote(note.id)}>
+                <Text style={styles.tileText} numberOfLines={4}>
+                  {preview(note)}
+                </Text>
+                <Text style={styles.tileMeta}>
+                  {note.segments.length} {note.segments.length === 1 ? 'block' : 'blocks'} ·{' '}
+                  {new Date(note.updatedAt).toLocaleDateString()}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.deleteButton}
+                hitSlop={6}
+                onPress={() => confirmDelete(note)}
+              >
+                <Text style={styles.deleteText}>Delete</Text>
+              </Pressable>
             </View>
-            <Pressable
-              style={styles.deleteButton}
-              hitSlop={8}
-              onPress={() => confirmDelete(note)}
-            >
-              <Text style={styles.deleteText}>Delete</Text>
-            </Pressable>
-          </Pressable>
-        ))
-      )}
+          );
+        })}
+      </View>
+
       <Pressable style={styles.newButton} onPress={onNewNote}>
         <Text style={styles.newButtonText}>+ New note</Text>
       </Pressable>
@@ -76,23 +133,53 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 16,
   },
-  row: {
-    borderColor: '#2a2a2a',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
+  grid: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  rowMain: {
+  tile: {
+    // Two squares per row: (screen − padding − gap) / 2, kept square by aspectRatio.
+    width: '47.5%',
+    aspectRatio: 1,
+    borderColor: '#2a2a2a',
+    borderWidth: 1,
+    borderRadius: 14,
+    backgroundColor: '#0d0d0d',
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  tileTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  tileTitleInput: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+    borderBottomColor: '#e07070',
+    borderBottomWidth: 1,
+    padding: 0,
+  },
+  tileBody: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  tileText: {
+    color: '#b9b9b9',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  tileMeta: {
+    color: '#777',
+    fontSize: 11,
+    marginTop: 6,
   },
   deleteButton: {
+    alignSelf: 'flex-start',
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#4a2a2a',
@@ -100,24 +187,15 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     color: '#e07070',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  rowText: {
-    color: '#e8e8e8',
-    fontSize: 16,
-  },
-  rowMeta: {
-    color: '#777',
     fontSize: 12,
-    marginTop: 4,
+    fontWeight: '600',
   },
   newButton: {
     backgroundColor: '#1c1c1c',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 16,
   },
   newButtonText: {
     color: '#fff',
