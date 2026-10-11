@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
+import { BackHandler } from 'react-native';
 
 import HomeScreen from './src/screens/HomeScreen';
 import NoteScreen from './src/screens/NoteScreen';
@@ -207,6 +208,18 @@ export default function App() {
   };
 
   const currentNote = notes.find((note) => note.id === currentNoteId) ?? null;
+
+  // Phone back button: inside a note → home page. On home → default behavior
+  // (exit). An open keyboard consumes the back press natively first, so this
+  // only fires once the keyboard is already dismissed.
+  useEffect(() => {
+    if (page !== 'editor') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      goHome();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [page]);
 
   return (
     <>
