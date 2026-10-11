@@ -6,7 +6,7 @@ import type { Transcriber } from './types';
  *  Provider history: Hugging Face → Groq (HF free tier began returning 402). */
 const provider: Transcriber = groqTranscribe;
 
-export async function transcribe(audioUri: string) {
-  return provider(audioUri);
+export async function transcribe(audioUri: string, language?: string) {
+  return provider(audioUri, language);
 }
 

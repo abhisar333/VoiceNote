@@ -6,4 +6,6 @@ export type { Word };
 
 export type Transcript = { words: Word[] };
 
-export type Transcriber = (audioUri: string) => Promise<Transcript>;
+/** language = Whisper code ('en', 'hi', …); undefined → provider autodetects
+ *  (exactly the first-try behavior — never passed on the initial run). */
+export type Transcriber = (audioUri: string, language?: string) => Promise<Transcript>;

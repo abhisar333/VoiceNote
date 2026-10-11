@@ -87,6 +87,19 @@ export function setVoiceTranscript(note: Note, id: string, text: string, words: 
   };
 }
 
+/** Re-transcribe: send the segment back to the 1-2-3 dots state. The audio
+ *  file and word list from the previous attempt are discarded (spec.md: the
+ *  retry replaces text and timings; audio is never touched). */
+export function resetVoiceTranscript(note: Note, id: string): Note {
+  return {
+    ...note,
+    segments: note.segments.map((segment) =>
+      segment.id === id && segment.kind === 'voice' ? { ...segment, text: '', words: null } : segment,
+    ),
+    updatedAt: Date.now(),
+  };
+}
+
 /** A silent take leaves no segment at all (prd.md > Transcription). */
 export function removeSegment(note: Note, id: string): Note {
   return {

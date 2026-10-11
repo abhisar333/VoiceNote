@@ -3,6 +3,7 @@ import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 
 import type { Segment, VoiceSegment, Word } from '../features/segments';
 import type { NoteMode } from './ModeToggle';
+import LanguagePicker from './LanguagePicker';
 
 type Props = {
   segment: Segment;
@@ -13,6 +14,9 @@ type Props = {
   onReplayEnd?: () => void;
   /** Slice 4: called on blur when the text was changed in place (edit mode only). */
   onEditText?: (id: string, text: string) => void;
+  /** Re-transcribe the segment's original audio (edit mode only).
+   *  undefined language = Auto-detect — the same param-free path as the first try. */
+  onRetranscribe?: (segment: VoiceSegment, language: string | undefined) => void;
 };
 
 /** The 1-2-3 dots while the finished recording is with the transcriber (prd.md > Transcription). */
@@ -91,9 +95,11 @@ export default function SegmentBubble({
   onReplayWord,
   onReplayEnd,
   onEditText,
+  onRetranscribe,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const [pickingLanguage, setPickingLanguage] = useState(false);
   const prevMode = useRef(mode);
 
   const beginEdit = () => {
@@ -174,9 +180,28 @@ export default function SegmentBubble({
   const body = (
     <Text style={[styles.voiceText, failed && styles.failedText]}>{segment.text}</Text>
   );
+  // Re-transcribe: edit mode only, hidden while the transcriber is running.
+  // Opens the searchable picker; a first transcription NEVER shows it.
+  const retranscribeControl =
+    mode === 'edit' && onRetranscribe && !transcribing ? (
+      <Pressable
+        style={styles.retryButton}
+        hitSlop={6}
+        onPress={() => setPickingLanguage(true)}
+        accessibilityLabel="Re-transcribe"
+      >
+        <Text style={styles.retryText}>↻ Re-transcribe</Text>
+      </Pressable>
+    ) : null;
   return (
     <View style={styles.voice}>
       {mode === 'edit' && onEditText ? <Pressable onPress={beginEdit}>{body}</Pressable> : body}
+      {retranscribeControl}
+      <LanguagePicker
+        visible={pickingLanguage}
+        onClose={() => setPickingLanguage(false)}
+        onSelect={(language) => onRetranscribe?.(segment, language)}
+      />
     </View>
   );
 }
@@ -225,6 +250,21 @@ const styles = StyleSheet.create({
   failedText: {
     color: '#8a8a8a',
     fontStyle: 'italic',
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  retryText: {
+    color: '#9fd0ff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   dotsRow: {
     flexDirection: 'row',

@@ -18,6 +18,7 @@ import {
   newNoteId,
   newSegmentId,
   removeSegment,
+  resetVoiceTranscript,
   setNoteDraft,
   setNoteTitle,
   setVoiceTranscript,
@@ -129,9 +130,14 @@ export default function App() {
   const patchNote = (noteId: string, patch: (note: Note) => Note) =>
     setNotes((current) => current.map((note) => (note.id === noteId ? patch(note) : note)));
 
-  const runTranscription = async (noteId: string, segmentId: string, audioUri: string) => {
+  const runTranscription = async (
+    noteId: string,
+    segmentId: string,
+    audioUri: string,
+    language?: string,
+  ) => {
     try {
-      const { words } = await transcribe(audioUri);
+      const { words } = await transcribe(audioUri, language);
       if (words.length === 0) {
         // Silent take: no segment, short notice (prd.md > Transcription).
         patchNote(noteId, (current) => removeSegment(current, segmentId));
@@ -214,6 +220,18 @@ export default function App() {
 
   const currentNote = notes.find((note) => note.id === currentNoteId) ?? null;
 
+  // Re-transcribe (edit mode only): reset to the 1-2-3 dots, then re-run the
+  // pipeline on the SAME audio file with the chosen language. First-time
+  // transcriptions never reach this path — they still call runTranscription
+  // directly with no language (autodetect).
+  const handleRetranscribe = (segment: VoiceSegment, language: string | undefined) => {
+    if (!currentNoteId) return;
+    const noteId = currentNoteId;
+    stopReplay();
+    patchNote(noteId, (current) => resetVoiceTranscript(current, segment.id));
+    void runTranscription(noteId, segment.id, segment.audioUri, language);
+  };
+
   // Phone back button: inside a note → home page. On home → default behavior
   // (exit). An open keyboard consumes the back press natively first, so this
   // only fires once the keyboard is already dismissed.
@@ -255,6 +273,7 @@ export default function App() {
           onEditText={(id, text) =>
             patchNote(currentNote.id, (current) => editSegmentText(current, id, text))
           }
+          onRetranscribe={handleRetranscribe}
           onRecordPress={handleRecordPress}
           recording={recording}
           live={recording && live}

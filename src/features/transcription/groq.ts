@@ -20,25 +20,28 @@ type GroqResult = { text?: string; words?: GroqWord[] };
  *  Uses expo-file-system's native multipart upload: Expo SDK 57's fetch rejects
  *  React Native's { uri } FormData parts ("uri is not supported for React Native's
  *  FormData"), so the file must be sent through the native upload path. */
-export async function transcribe(audioUri: string): Promise<Transcript> {
+export async function transcribe(audioUri: string, language?: string): Promise<Transcript> {
   const token = process.env.EXPO_PUBLIC_GROQ_API_KEY;
   if (!token) throw new Error('EXPO_PUBLIC_GROQ_API_KEY is missing from .env');
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
+    const parameters: Record<string, string> = {
+      model: MODEL,
+      response_format: 'verbose_json',
+      // Word-level timestamps — the PRD's replay-in-place promise (spec.md > Risks #1).
+      'timestamp_granularities[]': 'word',
+    };
+    // Omitted entirely when undefined → Whisper autodetects (first-try default).
+    if (language) parameters.language = language;
     const result = await new File(audioUri).upload(ENDPOINT, {
       httpMethod: 'POST',
       uploadType: UploadType.MULTIPART,
       fieldName: 'file',
       mimeType: 'audio/m4a',
       headers: { Authorization: `Bearer ${token}` },
-      parameters: {
-        model: MODEL,
-        response_format: 'verbose_json',
-        // Word-level timestamps — the PRD's replay-in-place promise (spec.md > Risks #1).
-        'timestamp_granularities[]': 'word',
-      },
+      parameters,
       signal: controller.signal,
     });
 

@@ -38,6 +38,9 @@ type Props = {
   onStopReplay: () => void;
   /** Slice 4: permanent in-place edit of a segment's text (prd.md > Modes). */
   onEditText: (id: string, text: string) => void;
+  /** Re-transcribe a voice segment's audio, optionally in a chosen language
+   *  (edit mode only; undefined = Auto-detect, same as a first transcription). */
+  onRetranscribe: (segment: VoiceSegment, language: string | undefined) => void;
   /** Autosaved composer text — lives on the note, not local state, so typing
    *  survives force-quit exactly like recorded audio does. */
   draft: string;
@@ -61,6 +64,7 @@ export default function NoteScreen({
   onStartReplay,
   onStopReplay,
   onEditText,
+  onRetranscribe,
   draft,
   onDraftChange,
 }: Props) {
@@ -122,6 +126,7 @@ export default function NoteScreen({
             onReplayWord={(segment, wordMs) => onStartReplay(segment, wordMs)}
             onReplayEnd={onStopReplay}
             onEditText={onEditText}
+            onRetranscribe={onRetranscribe}
           />
         ))}
 
