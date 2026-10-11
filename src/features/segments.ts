@@ -116,7 +116,15 @@ export function removeSegment(note: Note, id: string): Note {
  *  (the PRD's typo-fix case); a different count spreads them across the original span. */
 export function editSegmentText(note: Note, id: string, text: string): Note {
   const trimmed = text.trim();
-  if (trimmed === '') return note; // an empty edit keeps what was there
+  const target = note.segments.find((segment) => segment.id === id);
+  if (!target) return note;
+  if (trimmed === '') {
+    // Typed line erased to nothing → delete the block (learner expectation:
+    // backspace everything and it's gone). Voice keeps its audio-backed text —
+    // the transcript is the recording's captions, use ✕ Delete to drop it.
+    if (target.kind === 'typed') return removeSegment(note, id);
+    return note;
+  }
   return {
     ...note,
     segments: note.segments.map((segment) => {

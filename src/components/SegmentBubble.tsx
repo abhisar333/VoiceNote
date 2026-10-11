@@ -122,7 +122,9 @@ export default function SegmentBubble({
 
   const commitEdit = () => {
     const trimmed = draft.trim();
-    if (trimmed !== '' && trimmed !== segment.text) onEditText?.(segment.id, trimmed);
+    // Erasing everything is a real edit for typed lines (deletes the block) —
+    // the store decides; voice keeps its audio-backed text on an empty edit.
+    if (trimmed !== segment.text) onEditText?.(segment.id, trimmed);
     setEditing(false);
   };
 
