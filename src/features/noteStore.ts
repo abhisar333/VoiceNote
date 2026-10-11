@@ -90,6 +90,18 @@ async function loadLegacyNote(): Promise<Note | null> {
   }
 }
 
+/** Delete one segment's audio file (user removed a single bubble). Best-effort,
+ *  like deleteNoteAudio: a file we can't remove never blocks the delete. */
+export function deleteSegmentAudio(segment: Segment): void {
+  if (segment.kind !== 'voice') return;
+  try {
+    const file = new File(segment.audioUri);
+    if (file.exists) file.delete();
+  } catch {
+    // Stays on disk; harmless — saveNotes drops segments whose audio is gone.
+  }
+}
+
 /** Delete every audio file a note's voice segments point at. Called when the
  *  note itself is deleted so the recordings folder never keeps orphaned
  *  takes (spec > Data Model: audio lives in documents/recordings/). Missing

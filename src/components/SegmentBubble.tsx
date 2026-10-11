@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { Segment, VoiceSegment, Word } from '../features/segments';
 import type { NoteMode } from './ModeToggle';
@@ -17,6 +17,9 @@ type Props = {
   /** Re-transcribe the segment's original audio (edit mode only).
    *  undefined language = Auto-detect — the same param-free path as the first try. */
   onRetranscribe?: (segment: VoiceSegment, language: string | undefined) => void;
+  /** Remove just this segment from the note (edit mode only); the caller also
+   *  deletes the segment's audio file when it's a voice bubble. */
+  onRemove?: (segment: Segment) => void;
 };
 
 /** The 1-2-3 dots while the finished recording is with the transcriber (prd.md > Transcription). */
@@ -96,11 +99,25 @@ export default function SegmentBubble({
   onReplayEnd,
   onEditText,
   onRetranscribe,
+  onRemove,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [pickingLanguage, setPickingLanguage] = useState(false);
   const prevMode = useRef(mode);
+
+  // Delete one segment with confirmation — voice bubbles must be removable
+  // without deleting the whole note. Audio (if any) goes with it.
+  const confirmRemove = () => {
+    Alert.alert(
+      'Delete this block?',
+      segment.kind === 'voice' ? 'Its recording is removed too.' : 'This typed line is removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => onRemove?.(segment) },
+      ],
+    );
+  };
 
   const beginEdit = () => {
     setDraft(segment.text);
@@ -140,9 +157,21 @@ export default function SegmentBubble({
     // Edit mode: tap the text to fix it. View mode stays read-only.
     if (mode === 'edit' && onEditText) {
       return (
-        <Pressable onPress={beginEdit}>
-          <Text style={styles.typed}>{segment.text}</Text>
-        </Pressable>
+        <View>
+          <Pressable onPress={beginEdit}>
+            <Text style={styles.typed}>{segment.text}</Text>
+          </Pressable>
+          {onRemove ? (
+            <Pressable
+              style={styles.removeButton}
+              hitSlop={6}
+              onPress={confirmRemove}
+              accessibilityLabel="Delete block"
+            >
+              <Text style={styles.removeText}>✕ Delete</Text>
+            </Pressable>
+          ) : null}
+        </View>
       );
     }
     return <Text style={styles.typed}>{segment.text}</Text>;
@@ -197,6 +226,16 @@ export default function SegmentBubble({
     <View style={styles.voice}>
       {mode === 'edit' && onEditText ? <Pressable onPress={beginEdit}>{body}</Pressable> : body}
       {retranscribeControl}
+      {mode === 'edit' && onRemove && !transcribing ? (
+        <Pressable
+          style={styles.removeButton}
+          hitSlop={6}
+          onPress={confirmRemove}
+          accessibilityLabel="Delete block"
+        >
+          <Text style={styles.removeText}>✕ Delete</Text>
+        </Pressable>
+      ) : null}
       <LanguagePicker
         visible={pickingLanguage}
         onClose={() => setPickingLanguage(false)}
@@ -263,6 +302,21 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: '#9fd0ff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  removeButton: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4a2a2a',
+    backgroundColor: '#1c1010',
+  },
+  removeText: {
+    color: '#e07070',
     fontSize: 12,
     fontWeight: '600',
   },

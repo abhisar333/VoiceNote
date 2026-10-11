@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-import type { Note, VoiceSegment } from '../features/segments';
+import type { Note, Segment, VoiceSegment } from '../features/segments';
 import ModeToggle, { type NoteMode } from '../components/ModeToggle';
 import RecordButton from '../components/RecordButton';
 import SegmentBubble from '../components/SegmentBubble';
@@ -41,6 +41,8 @@ type Props = {
   /** Re-transcribe a voice segment's audio, optionally in a chosen language
    *  (edit mode only; undefined = Auto-detect, same as a first transcription). */
   onRetranscribe: (segment: VoiceSegment, language: string | undefined) => void;
+  /** Delete a single segment (edit mode only), audio file included. */
+  onRemoveSegment: (segment: Segment) => void;
   /** Autosaved composer text — lives on the note, not local state, so typing
    *  survives force-quit exactly like recorded audio does. */
   draft: string;
@@ -65,6 +67,7 @@ export default function NoteScreen({
   onStopReplay,
   onEditText,
   onRetranscribe,
+  onRemoveSegment,
   draft,
   onDraftChange,
 }: Props) {
@@ -127,6 +130,7 @@ export default function NoteScreen({
             onReplayEnd={onStopReplay}
             onEditText={onEditText}
             onRetranscribe={onRetranscribe}
+            onRemove={onRemoveSegment}
           />
         ))}
 

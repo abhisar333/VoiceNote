@@ -7,9 +7,9 @@ import NoteScreen from './src/screens/NoteScreen';
 import type { NoteMode } from './src/components/ModeToggle';
 import { getMetering, meteringToLive, startRecording, stopRecording } from './src/features/recorder';
 import { transcribe } from './src/features/transcription/transcri';
-import type { VoiceSegment } from './src/features/segments';
+import type { Note, Segment, VoiceSegment } from './src/features/segments';
 import { startSeek, stop as stopPlayer } from './src/features/player';
-import { loadNotes, saveNotes, deleteNoteAudio } from './src/features/noteStore';
+import { loadNotes, saveNotes, deleteNoteAudio, deleteSegmentAudio } from './src/features/noteStore';
 import {
   addTypedSegment,
   addVoiceSegment,
@@ -22,7 +22,6 @@ import {
   setNoteDraft,
   setNoteTitle,
   setVoiceTranscript,
-  type Note,
 } from './src/features/segments';
 
 const NOTICE_MS = 3500;
@@ -232,6 +231,15 @@ export default function App() {
     void runTranscription(noteId, segment.id, segment.audioUri, language);
   };
 
+  // Delete a single segment: audio first (best-effort), then the segment
+  // itself — the note and its other blocks stay put.
+  const handleRemoveSegment = (segment: Segment) => {
+    if (!currentNoteId) return;
+    stopReplay();
+    deleteSegmentAudio(segment);
+    patchNote(currentNoteId, (current) => removeSegment(current, segment.id));
+  };
+
   // Phone back button: inside a note → home page. On home → default behavior
   // (exit). An open keyboard consumes the back press natively first, so this
   // only fires once the keyboard is already dismissed.
@@ -274,6 +282,7 @@ export default function App() {
             patchNote(currentNote.id, (current) => editSegmentText(current, id, text))
           }
           onRetranscribe={handleRetranscribe}
+          onRemoveSegment={handleRemoveSegment}
           onRecordPress={handleRecordPress}
           recording={recording}
           live={recording && live}

@@ -100,7 +100,8 @@ export function resetVoiceTranscript(note: Note, id: string): Note {
   };
 }
 
-/** A silent take leaves no segment at all (prd.md > Transcription). */
+/** Remove one segment (user action or silent take). Audio cleanup is the
+ *  caller's job — see noteStore.deleteSegmentAudio. */
 export function removeSegment(note: Note, id: string): Note {
   return {
     ...note,
