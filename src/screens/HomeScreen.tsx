@@ -14,7 +14,11 @@ type Props = {
 
 function preview(note: Note): string {
   const first = note.segments.map((segment) => segment.text.trim()).find((text) => text !== '');
-  return first ?? '(empty note)';
+  if (first) return first;
+  // Uncommitted autosaved draft still counts as content (never "(empty note)").
+  const draft = note.draft?.trim();
+  if (draft) return draft;
+  return '(empty note)';
 }
 
 function titleOf(note: Note): string {
@@ -62,6 +66,7 @@ export default function HomeScreen({
     .filter((note) => {
       if (q === '') return true;
       if (titleOf(note).toLowerCase().includes(q)) return true;
+      if (note.draft?.toLowerCase().includes(q)) return true;
       return note.segments.some((segment) => segment.text.toLowerCase().includes(q));
     })
     .sort((a, b) =>

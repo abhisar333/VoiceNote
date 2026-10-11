@@ -67,6 +67,11 @@ export default function App() {
     stopReplay();
     setRecording(false);
     setLive(false);
+    // A half-typed line must become a real block before we leave, otherwise
+    // the tile previews as "(empty note)". addTypedSegment also clears the draft.
+    if (currentNoteId) {
+      patchNote(currentNoteId, (current) => addTypedSegment(current, current.draft ?? ''));
+    }
     setCurrentNoteId(null);
     setPage('home');
   };
