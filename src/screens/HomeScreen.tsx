@@ -148,7 +148,7 @@ export default function HomeScreen({
                     {preview(note)}
                   </Text>
                   <Text style={styles.tileMeta}>
-                    {note.segments.length} {note.segments.length === 1 ? 'block' : 'blocks'} ·{' '}
+                    {note.segments.length} {note.segments.length === 1 ? 'voice note' : 'voice notes'} ·{' '}
                     {new Date(note.updatedAt).toLocaleDateString()}
                   </Text>
                 </Pressable>
