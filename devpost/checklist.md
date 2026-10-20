@@ -77,15 +77,17 @@ Build mode: learn
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
+- [x] Learning activity complete — brief recap used (learner declined the walk; hands-on practice already covered by their cold-restart verification)
 - [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: [pending]
-Route and stops: [pending]
-Edit outcome: [pending]
-Reflection: [pending]
-Activity mode: [pending]
+Activity and evidence: Brief evidence-based recap, offered in place of the 2–3-stop static walk; learner chose to skip ("skip it"). Recap content: the PRD's silent-take acceptance criterion (`prd.md > Transcription`, "no audio recorded" notice, no segment) → the on-device mismatch (Whisper returned "." for silence) → the precise fix (punctuation-only words dropped, commit 1f0cb85). Connection to the learner's stated goal (explaining their side rigorously): a requirement phrased as an observable behavior made the mismatch catchable and the fix spec-able. Hands-on practice counted from the learner's own final walkthrough — recorded as recap, not as a fresh hands-on exercise.
+Route and stops: Route in `devpost/app-map.html` labeled **reference route** (not walked interactively): App.tsx `handleRecordPress` → groq.ts `toWords` / player.ts `startSeek` → noteStore.ts `loadNotes`/`saveNotes`.
+Edit outcome: Not applicable — no code edit was part of the wrap-up (learner skipped the optional exercise).
+Reflection: [pending — transfer question asked, awaiting answer]
+Activity mode: Focused alternative (plan-first learner; practice already completed during build — cited, not repeated).
+
+App map: `devpost/app-map.html` generated from commit f3d6449; all paths/anchors verified against source (handleRecordPress, toWords, loadNotes/saveNotes, showNotice, LANGUAGES, commitDraft, startSeek — all found); PRD silent-take wording confirmed at prd.md lines 38/64; one attribution corrected during check (fix reference is git commit 1f0cb85, not a checklist entry). Browser rendering not machine-verified — checked as static HTML (no scripts/CDN, inline SVG, escaped code).
 
 - **Slice 3 word-precise replay with progress ring (spec.md > Replay in place):** long-press a voice word in view mode starts playback from that word with a single haptic and the top-left ring; plain taps do nothing; releasing stops; leaving view stops playback. Leap-precise accuracy is the POC's top risk and is verified on-device before this slice is closed.
 - **Slice 3 learner check completed on device:** long-press start + haptic + ring verified; release-to-stop, natural-end ring clear, and normal wrapped-text layout fixed after learner feedback (commits 7d01cf1, 88fa72d).

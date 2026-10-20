@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoiceNote — App Map</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: system-ui, sans-serif; background:#0b0b0b; color:#e6e6e6;
+         max-width: 52rem; margin: 2rem auto; padding: 0 1.2rem; line-height: 1.55; }
+  h1 { font-size:1.6rem; } h2 { font-size:1.15rem; margin-top:2rem; color:#fff; }
+  code, pre { font-family: ui-monospace, Consolas, monospace; font-size:.92em; }
+  code { background:#1c1c1c; padding:.1em .35em; border-radius:4px; }
+  pre { background:#151515; border:1px solid #2a2a2a; border-radius:8px;
+        padding:.8rem 1rem; overflow-x:auto; }
+  pre code { background:none; padding:0; }
+  a { color:#7cb7ff; }
+  .dim { color:#9a9a9a; font-size:.92em; }
+  .card { border:1px solid #2a2a2a; border-radius:12px; padding:.9rem 1.1rem;
+          background:#111; margin:.7rem 0; }
+  table { border-collapse:collapse; width:100%; }
+  td, th { border:1px solid #2a2a2a; padding:.45rem .6rem; text-align:left;
+           vertical-align:top; }
+  th { background:#181818; }
+  .tag { display:inline-block; font-size:.78em; padding:.1em .5em;
+         border:1px solid #3a3a3a; border-radius:999px; color:#bbb; }
+  svg text { font-family: system-ui, sans-serif; }
+  :focus-visible { outline:3px solid #7cb7ff; outline-offset:2px; }
+  summary { cursor:pointer; padding:.3rem 0; }
+</style>
+</head>
+<body>
+
+<h1>VoiceNote — App Map</h1>
+<p class="dim">A take-home reference generated from the finished code.
+Snapshot at commit <code>f3d6449</code> — it can drift as the code changes.</p>
+
+<h2>What this app is</h2>
+<p>VoiceNote is an Android Expo app for notes made of <strong>blocks</strong>:
+typed lines and voice recordings that keep their audio and play back from any
+word you long-press. The home page lists notes as square tiles (search, sort,
+rename, delete); opening one gives an editor with a red record button. What
+runs it:</p>
+<ul>
+  <li><strong>UI:</strong> two screens — <code>src/screens/HomeScreen.tsx</code> (tiles) and
+      <code>src/screens/NoteScreen.tsx</code> (editor), with blocks rendered by
+      <code>src/components/SegmentBubble.tsx</code>.</li>
+  <li><strong>State:</strong> <code>App.tsx</code> holds the notes list and every handler.</li>
+  <li><strong>Storage:</strong> one JSON file <code>documents/notes.json</code> plus audio files
+      in <code>documents/recordings/</code>, behind <code>src/features/noteStore.ts</code>.</li>
+  <li><strong>External service:</strong> Groq Whisper transcribes recordings
+      (<code>src/features/transcription/</code>).</li>
+</ul>
+
+<h2>One action, end to end</h2>
+<div class="card">
+<svg viewBox="0 0 860 260" width="100%" role="img"
+     aria-label="Diagram: tapping the record button leads to App.tsx handleRecordPress,
+     which calls the recorder to write an audio file, then runTranscription uploads it
+     to Groq, which returns word timestamps, and SegmentBubble renders the transcript;
+     the save effect writes notes.json.">
+  <style>
+    .b { fill:#1c1c1c; stroke:#3a3a3a; rx:8; }
+    .r { fill:#2a1212; stroke:#e03535; rx:8; }
+    .t { fill:#e6e6e6; font-size:13px; }
+    .s { fill:#9a9a9a; font-size:11px; }
+    .l { stroke:#666; stroke-width:1.5; marker-end:url(#a); }
+    .e { fill:#ffd27d; font-size:12px; font-style:italic; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+            markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#666"/></marker>
+  </defs>
+  <rect class="r" x="10" y="95" width="130" height="52"/>
+  <text class="t" x="26" y="116">Tap red</text><text class="t" x="26" y="134">record button</text>
+  <rect class="b" x="185" y="95" width="175" height="52"/>
+  <text class="t" x="199" y="116">App.tsx</text><text class="s" x="199" y="134">handleRecordPress()</text>
+  <rect class="b" x="405" y="20" width="190" height="52"/>
+  <text class="t" x="419" y="41">recorder.ts → file</text><text class="s" x="419" y="59">documents/recordings/*.m4a</text>
+  <rect class="b" x="405" y="95" width="190" height="52"/>
+  <text class="t" x="419" y="116">runTranscription()</text><text class="s" x="419" y="134">→ Groq Whisper (external)</text>
+  <rect class="b" x="640" y="95" width="205" height="52"/>
+  <text class="t" x="654" y="116">setVoiceTranscript()</text><text class="s" x="654" y="134">SegmentBubble shows words</text>
+  <rect class="b" x="405" y="175" width="190" height="52"/>
+  <text class="t" x="419" y="196">save effect →</text><text class="s" x="419" y="214">documents/notes.json</text>
+  <path class="l" d="M140 121 H181"/>
+  <path class="l" d="M360 110 L401 60"/>
+  <path class="l" d="M360 121 H401"/>
+  <path class="l" d="M595 121 H636"/>
+  <path class="l" d="M470 147 V171"/>
+  <text class="e" x="10" y="175">Result: grey bubble → 1-2-3 dots → transcript fills it</text>
+</svg>
+<p class="dim">Typed blocks skip the middle: a line typed in the composer
+(<code>NoteScreen.tsx</code>) becomes a block on blur/record/leave, via
+<code>addTypedSegment()</code> in <code>src/features/segments.ts</code>.</p>
+</div>
+
+<h2>Reference route (not walked interactively)</h2>
+<p class="dim">A suggested 2–3-stop path through the code — offered as a
+reference, not something completed in a session.</p>
+<ol>
+  <li><strong>The kernel entry point.</strong> <code>App.tsx</code> → search
+      <code>handleRecordPress</code>. Tap record → <code>startRecording</code>;
+      tap again → <code>stopRecording</code> appends the voice block, then
+      <code>runTranscription</code> runs. <em>This one function is where the
+      PRD's steps 2–4 live.</em></li>
+  <li><strong>Transcription and word timings.</strong>
+      <code>src/features/transcription/groq.ts</code> → search
+      <code>toWords</code>. Groq's response (seconds) becomes the note's
+      <code>Word[]</code> (milliseconds) — the exact data
+      <code>src/features/player.ts</code>'s <code>startSeek()</code> later
+      seeks to when you long-press a word.</li>
+  <li><strong>Persistence.</strong> <code>src/features/noteStore.ts</code> →
+      <code>loadNotes</code> / <code>saveNotes</code>. The whole app reads and
+      writes through this one module — which is why swapping to SQLite later
+      touches only this file (see <code>devpost/production-notes.md</code>).</li>
+</ol>
+
+<h2>To change this, start here</h2>
+<table>
+<tr><th>Want to change…</th><th>Start here</th></tr>
+<tr><td>The record button's look/pulse</td><td><code>src/components/RecordButton.tsx</code></td></tr>
+<tr><td>Notice messages ("no audio recorded")</td><td><code>App.tsx</code> → search <code>showNotice</code></td></tr>
+<tr><td>Home tiles, titles, search/sort</td><td><code>src/screens/HomeScreen.tsx</code></td></tr>
+<tr><td>Language list / default (Auto-detect)</td><td><code>src/components/LanguagePicker.tsx</code> → <code>LANGUAGES</code></td></tr>
+<tr><td>Transcription provider or model</td><td><code>src/features/transcription/transcri.ts</code> (the facade) then <code>groq.ts</code></td></tr>
+<tr><td>Typed-block commit rules (blur/record/leave)</td><td><code>src/screens/NoteScreen.tsx</code> → <code>commitDraft</code></td></tr>
+<tr><td>Replay start/haptics</td><td><code>src/features/player.ts</code> → <code>startSeek</code></td></tr>
+</table>
+
+<h2>A practice to reuse</h2>
+<div class="card">
+<p><strong>Specify the observable result, edge cases included.</strong>
+This project's PRD stated the silent-take rule as something a tester can
+<em>see</em>: record silence → show "no audio recorded", add no block
+(<code>devpost/prd.md</code>, Transcription section). When Whisper actually
+returned a lone <code>.</code> for silence, the mismatch was obvious against
+that written result, and the fix could be stated just as precisely —
+"punctuation-only words are dropped" (git commit <code>1f0cb85</code>,
+slice 5 of <code>devpost/checklist.md</code>; the filter is in
+<code>groq.ts</code> → <code>toWords</code>).</p>
+<p class="dim">Why it transfers: a requirement phrased as an observable
+behavior gives whoever builds (human or agent) a check they can run and a
+mismatch they can't explain away — on any project, in any language.</p>
+</div>
+
+<h2>Run it again</h2>
+<pre><code>cd Noteapp
+npm run restart        # fresh Metro in a new window
+# then: shake the phone → Reload (or press r in the dev menu)</code></pre>
+<p class="dim">Map generated from commit <code>f3d6449</code>
+(<code>git log -1 --format=%H</code>). It is a snapshot — later commits can
+drift from what's described here.</p>
+
+</body>
+</html>
+
