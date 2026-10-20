@@ -78,7 +78,7 @@ Build mode: learn
 ## Code Tour and App Map
 
 - [x] Learning activity complete — brief recap used (learner declined the walk; hands-on practice already covered by their cold-restart verification)
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
+- [x] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate — learner answered the transfer question; reflection recorded.
 - [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
 Activity and evidence: Brief evidence-based recap, offered in place of the 2–3-stop static walk; learner chose to skip ("skip it"). Recap content: the PRD's silent-take acceptance criterion (`prd.md > Transcription`, "no audio recorded" notice, no segment) → the on-device mismatch (Whisper returned "." for silence) → the precise fix (punctuation-only words dropped, commit 1f0cb85). Connection to the learner's stated goal (explaining their side rigorously): a requirement phrased as an observable behavior made the mismatch catchable and the fix spec-able. Hands-on practice counted from the learner's own final walkthrough — recorded as recap, not as a fresh hands-on exercise.
