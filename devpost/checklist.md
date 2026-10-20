@@ -64,7 +64,7 @@ Build mode: learn
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 2 (the kernel: record → text) since feedback there shapes replay and editing
-- [ ] Final kick-the-tires exploration and feedback completed
+- [x] Final kick-the-tires exploration and feedback completed — learner restarted Expo, cold-reloaded, and walked all features: 5 slices + homepage, multi-note, titles/tiles, search/sort, FAB, back navigation, keyboard dismiss, draft autosave, voice-block delete, re-transcribe with language picker, chained backspace.
 
 ## Final Review
 
@@ -73,7 +73,7 @@ Build mode: learn
 - **Pulse while speaking:** question asked, answer not yet received — decision deferred with the later note (raise threshold + treat near-silent as no-pulse) applied to the checklist for the next session.
 - **Language decision (left as-is):** auto-detection returned correct English (`sky or heven`); forcing `language: "en"` declined by the learner for now. Revisit later if mis-transcription becomes an issue.
 
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship — all features passed the cold-restart walkthrough; learner confirmation given.
 
 ## Code Tour and App Map
 
