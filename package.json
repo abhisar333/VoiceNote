@@ -3,15 +3,19 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "expo": "~57.0.27",
-    "expo-audio": "~57.0.5",
-    "expo-file-system": "~57.0.7",
-    "expo-status-bar": "~57.0.1",
-    "react": "19.2.3",
-    "react-native": "0.86.3"
+    "@types/react": "~19.3.0",
+    "expo": "^58.0.19",
+    "expo-asset": "~58.0.18",
+    "expo-audio": "~58.0.10",
+    "expo-file-system": "~58.0.11",
+    "expo-status-bar": "~58.0.4",
+    "react": "19.3.0",
+    "react-native": "0.88.0"
   },
   "devDependencies": {
-    "@types/react": "~19.2.2",
+    "@expo/cli": "^58.1.15",
+    "@types/react": "~19.3.0",
+    "babel-preset-expo": "~58.0.10",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -19,6 +23,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web"
+  },
+  "expo": {
+    "allowScripts": true
   },
   "private": true
 }
