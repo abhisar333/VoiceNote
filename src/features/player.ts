@@ -29,7 +29,12 @@ export function startSeek(
 
   // The native constructor takes the resolved source Map — same as useAudioPlayer
   // does via resolveSource(): a bare string throws "expected Map, got a string".
-  const player = new PlayerClass({ uri: audioUri }, 1000, true, 0);
+  // Expo SDK 58's AudioPlayer takes five positional arguments (the ones the SDK's own
+  // createAudioPlayer() passes): source, updateInterval, keepAudioSessionActive,
+  // preferredForwardBufferDuration, allowsExternalPlayback. The first four are unchanged
+  // from before the upgrade; allowsExternalPlayback stays false — replay is always a
+  // local recording on this phone, never routed to another device.
+  const player = new PlayerClass({ uri: audioUri }, 1000, true, 0, false);
   const durationMs = Math.round(player.duration * 1000);
 
   player.play();

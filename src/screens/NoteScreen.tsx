@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 
@@ -71,7 +72,7 @@ export default function NoteScreen({
   draft,
   onDraftChange,
 }: Props) {
-  const composerRef = useRef<TextInput>(null);
+  const composerRef = useRef<TextInputInstance>(null);
   // Tap empty space: keyboard open → dismiss it; closed → start a new line.
   const [composerFocused, setComposerFocused] = useState(false);
   // Cross-block backspace: focus the block above after the current one empties.

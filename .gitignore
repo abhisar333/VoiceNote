@@ -16,3 +16,6 @@ android/
 ios/
 *.log
 .DS_Store
+
+# Incident reports (local post-mortems)
+incident-report/
